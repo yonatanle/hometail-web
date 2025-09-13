@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    adminLayout.xhtml - Base template for all admin pages
+    
+    This template provides the common layout structure for the admin section, including:
+    - Navigation menu
+    - Breadcrumb navigation
+    - Content area for page-specific content
+    - Common styles and scripts
+    - Authentication and authorization checks
+    
+    Pages using this template must define the following sections:
+    - title: Page title (appears in browser tab)
+    - breadcrumb: Navigation breadcrumb items
+    - content: Main page content
+    
+    Dependencies:
+    - loginBean: For authentication and user info
+    - PrimeFaces components for UI
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<!-- Document Head Section -->
+<h:head>
+    <!-- Dynamic page title with site name -->
+    <title><ui:insert name="title">Admin</ui:insert> • HomeTail</title>
+    
+    <!-- Responsive viewport settings -->
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    
+    <!-- Common admin styles -->
+    <h:outputStylesheet>
+        /* Main content container with max width and padding */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        /* Breadcrumb navigation styling */
+        .breadcrumb {
+            margin: 0.5rem 0 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        /* Breadcrumb link styling */
+        .breadcrumb a {
+            opacity: 0.8;
+            text-decoration: none;
+        }
+        
+        /* Page action buttons container */
+        .page-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 0.5rem 0 1rem;
+        }
+        
+        /* Content area styling */
+        .content {
+            padding: 0 1rem;
+        }
+    </h:outputStylesheet>
+</h:head>
+
+<!-- Document Body Section -->
+<h:body>
+    <!-- Security: Redirect non-admin users away from admin pages -->
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{loginBean.redirectIfNotAdmin}"/>
+    </f:metadata>
+    
+    <!-- Main navigation form -->
+    <h:form id="layoutForm">
+        <!-- Top navigation menu -->
+        <p:menubar>
+            <!-- Dashboard link - only shown to admins -->
+            <p:menuitem value="Dashboard" 
+                       outcome="/admin/index"
+                       rendered="#{loginBean.admin}" 
+                       icon="pi pi-shield"/>
+
+            <!-- Catalog submenu -->
+            <p:submenu label="Catalog" icon="pi pi-list">
+                <p:menuitem value="Categories" 
+                           icon="pi pi-tag" 
+                           outcome="/admin/manageCategories"/>
+                <p:menuitem value="Breeds"     
+                           icon="pi pi-paw" 
+                           outcome="/admin/manageBreeds"/>
+            </p:submenu>
+
+            <!-- Link back to public site -->
+            <p:menuitem value="Public site" 
+                       icon="pi pi-external-link" 
+                       outcome="/home"/>
+
+            <!-- Logout button -->
+            <p:menuitem value="Logout"
+                        icon="pi pi-sign-out"
+                        action="#{loginBean.logout}"
+                        update="@form :growl"
+                        rendered="#{loginBean.loggedIn}"/>
+            <!-- User info in the top-right corner -->
+            <f:facet name="options">
+                <!-- Show user info when logged in -->
+                <h:panelGroup rendered="#{loginBean.loggedIn}">
+                    <i class="pi pi-user" style="margin-right:.25rem"></i>
+                    <h:outputText value="#{loginBean.fullName}" />
+                    <!-- Show admin/user badge -->
+                    <p:tag value="#{loginBean.admin ? 'Admin' : 'User'}"
+                           severity="#{loginBean.admin ? 'success' : 'info'}"
+                           style="margin-left:.5rem"/>
+                </h:panelGroup>
+
+                <!-- Show guest when not logged in (shouldn't happen due to security) -->
+                <h:panelGroup rendered="#{!loginBean.loggedIn}">
+                    Guest
+                </h:panelGroup>
+            </f:facet>
+        </p:menubar>
+    </h:form>
+
+    <!-- Breadcrumb navigation -->
+    <div class="breadcrumb">
+        <h:link outcome="/admin/index" value="Admin" />
+        <span>/</span>
+        <!-- Insert page-specific breadcrumb items -->
+        <ui:insert name="breadcrumb">
+            <span>Dashboard</span>
+        </ui:insert>
+    </div>
+    
+    <!-- Main content area -->
+    <div class="content">
+        <!-- Page-specific content will be inserted here -->
+        <ui:insert name="content"/>
+    </div>
+</h:body>
+</html>

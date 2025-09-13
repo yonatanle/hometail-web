@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    My Animals Page - HomeTail Application
+    
+    Displays a list of animals that the currently logged-in user has submitted for adoption.
+    Shows the status of each animal (adopted/pending) and the number of pending adoption requests.
+    
+    Features:
+    - Displays user's submitted animals in a scrollable list
+    - Shows adoption status for each animal
+    - Links to detailed animal view
+    - Responsive design for all screen sizes
+    
+    Dependencies:
+    - myAnimalListBean: Manages the list of animals submitted by the user
+    - Main template: Provides consistent page layout
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - f: JSF core tags
+    - ui: Facelets templating
+    - p: PrimeFaces components
+-->
+<ui:composition template="/WEB-INF/templates/main.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+
+    <!-- 
+        Page Title
+        - Sets the browser tab/window title
+        - Displayed in the browser's title bar or tab
+    -->
+    <ui:define name="title">My Submitted Animals</ui:define>
+
+    <!-- 
+        Breadcrumb Navigation
+        - Shows the current location in the application
+        - Provides quick navigation back to the home page
+    -->
+    <ui:define name="breadcrumbs">
+        <p:breadCrumb>
+            <p:menuitem value="Home" outcome="/home.xhtml"/>
+            <p:menuitem value="My Animals" disabled="true"/>
+        </p:breadCrumb>
+    </ui:define>
+
+    <!-- 
+        Main Content Area
+        - Contains all page-specific content
+        - Replaces the content section in the main template
+    -->
+    <ui:define name="content">
+        <style>
+            .container { max-width:900px; margin:0 auto }
+            .page-title { text-align:center; margin-bottom:12px }
+            .scroll-container {
+                max-height:600px; overflow:auto; padding:10px;
+                border:1px solid #ccc; border-radius:8px;
+            }
+            .animal-card {
+                display:flex; gap:14px; border:1px solid #ddd;
+                padding:14px; margin-bottom:14px;
+                border-radius:8px; background:#fafafa;
+            }
+            .animal-img {
+                width:92px; height:92px; object-fit:cover;
+                border-radius:8px; border:1px solid #ddd;
+            }
+            .animal-info b { font-weight:600 }
+            .status-stack {
+                display:flex; flex-direction:column; gap:6px;
+                margin-left:auto; align-items:flex-end;
+            }
+            .link-button {
+                display:inline-block; padding:.5rem 1rem;
+                border-radius:6px; border:1px solid #d0d0d0;
+            }
+            @media (max-width: 620px) {
+                .animal-card { flex-wrap:wrap }
+                .status-stack { align-items:flex-start; margin-left:0 }
+            }
+        </style>
+
+        <!-- 
+            Page Header
+            - Main heading for the page
+            - Centered for better visual hierarchy
+        -->
+        <h2 class="page-title">Animals I Submitted</h2>
+
+        <h:form id="animalsForm">
+            <p:growl id="growl" showDetail="true" showSummary="true"
+                     skipDetailIfEqualsSummary="true" life="5000" sticky="false" />
+
+            <!-- 
+                Animals List Container
+                - Scrollable container for the list of animals
+                - Has a fixed maximum height with vertical scrolling
+                - Includes a border and rounded corners for better visual separation
+            -->
+            <div class="scroll-container">
+                <ui:repeat value="#{myAnimalListBean.myAnimals}" var="animal">
+                    <div class="animal-card">
+
+                        <!-- 
+                            Animal Image
+                            - Clickable image that links to the animal's details page
+                            - Handles both local and remote image paths
+                            - Includes alt text for accessibility
+                        -->
+                        <h:link outcome="animalDetails.xhtml">
+                            <f:param name="id" value="#{animal.id}" />
+                            <h:graphicImage
+                                    value="#{animal.image.startsWith('/uploads/')
+                                    ? 'http://localhost:9090'.concat(animal.image)
+                                    : animal.image}"
+                                    alt="Animal Image"
+                                    styleClass="animal-img" />
+                        </h:link>
+
+                        <!-- 
+                            Animal Information
+                            - Displays key details about the animal
+                            - Shows name, category, and breed
+                            - Uses semantic HTML for better accessibility
+                        -->
+                        <div class="animal-info">
+                            <div><b>Name:</b> #{animal.name}</div>
+                            <div><b>Category:</b> #{animal.categoryName}</div>
+                            <div><b>Breed:</b> #{animal.breedName}</div>
+                        </div>
+
+                        <!-- 
+                            Adoption Status
+                            - Shows if the animal has been adopted
+                            - Displays the number of pending adoption requests
+                            - Uses color-coded tags for better visibility
+                        -->
+                        <div class="status-stack">
+                            <p:tag value="Adopted" severity="success" rendered="#{animal.adopted}" />
+                            <p:tag value="Pending: #{myAnimalListBean.getPendingCount(animal.id)}"
+                                   severity="info"
+                                   rendered="#{!animal.adopted and myAnimalListBean.getPendingCount(animal.id) > 0}" />
+                        </div>
+
+                    </div>
+                </ui:repeat>
+            </div>
+
+            <!-- 
+                Back to Home Button
+                - Returns the user to the home page
+                - Styled consistently with the application's design system
+                - Centered below the animals list
+            -->
+            <div style="display:flex; justify-content:center; margin-top:16px;">
+                <h:link outcome="/home.xhtml" styleClass="link-button ui-button ui-widget">
+                    ← Back to Home
+                </h:link>
+            </div>
+        </h:form>
+    </ui:define>
+</ui:composition>

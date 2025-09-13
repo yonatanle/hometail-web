@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    main.xhtml - Base template for all public-facing pages
+    
+    This template provides the common layout structure for the public section, including:
+    - Global navigation menu
+    - Breadcrumb navigation (optional)
+    - Content area for page-specific content
+    - Global notification system
+    - Responsive layout
+    
+    Pages using this template must define the following sections:
+    - title: Page title (appears in browser tab)
+    - content: Main page content
+    - breadcrumbs: Optional navigation breadcrumb (not required)
+    
+    Dependencies:
+    - loginBean: For authentication state and user info
+    - PrimeFaces components for UI
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<!-- Document Head Section -->
+<h:head>
+    <!-- Dynamic page title with fallback to 'HomeTail' -->
+    <title><ui:insert name="title">HomeTail</ui:insert></title>
+    
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="#{request.contextPath}/resources/css/style.css"/>
+    
+    <!-- Inline styles specific to the layout -->
+    <style>
+        /* Main container with max width and padding */
+        .layout-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        
+        /* Site title styling */
+        .site-title {
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+        
+        /* Header bar containing the main navigation */
+        .header-bar {
+            padding: 8px 0 12px;
+        }
+        
+        /* Main content area */
+        .content {
+            margin-top: 16px;
+        }
+        
+        /* Breadcrumb navigation container */
+        .breadcrumbs {
+            margin: 10px 0 6px;
+        }
+    </style>
+</h:head>
+
+<!-- Document Body Section -->
+<h:body>
+    <!-- Global notification system - shows non-validation messages to the user -->
+    <p:growl id="growl" 
+             globalOnly="true" 
+             showDetail="true"
+             showSummary="true"
+             life="5000"
+             autoUpdate="true"
+             escape="false"
+             showIcon="true"
+             sticky="false" />
+
+    <!-- Main layout container -->
+    <div class="layout-shell">
+        <!-- Header Section -->
+        <div class="header-bar">
+            <h:form id="headerForm">
+                <!-- Main navigation menu -->
+                <p:menubar>
+                    <!-- Home/Welcome link (changes based on auth state) -->
+                    <p:menuitem value="Home" 
+                               outcome="/home.xhtml" 
+                               icon="pi pi-home" 
+                               rendered="#{loginBean.loggedIn}"/>
+                    <p:menuitem value="Welcome"
+                                outcome="/welcome.xhtml"
+                                icon="pi pi-home"
+                                rendered="#{!loginBean.loggedIn}"/>
+
+                    <p:menuitem value="Register"
+                                outcome="/register.xhtml"
+                                icon="pi pi-user-plus"
+                                rendered="#{!loginBean.loggedIn}"/>
+
+                    <!-- Main navigation items -->
+                    <p:menuitem value="View Animals"    
+                               outcome="/viewAnimals.xhtml" 
+                               icon="pi pi-search" />
+                    
+                    <!-- Authenticated user only items -->
+                    <p:menuitem value="My Animals"      
+                               outcome="/myAnimals.xhtml"   
+                               icon="pi pi-paw"  
+                               rendered="#{loginBean.loggedIn}"/>
+                    <p:menuitem value="My Requests"     
+                               outcome="/myAdoptionRequests.xhtml" 
+                               icon="pi pi-inbox" 
+                               rendered="#{loginBean.loggedIn}"/>
+                    <p:menuitem value="Submit Animal"   
+                               outcome="/submitAnimal.xhtml" 
+                               icon="pi pi-plus" 
+                               rendered="#{loginBean.loggedIn}"/>
+
+                    <!-- User account menu (aligned to the right) -->
+                    <p:submenu label="Account" 
+                              icon="pi pi-user" 
+                              style="margin-left:auto">
+                        <!-- Show user's name or 'Not signed in' -->
+                        <p:menuitem value="#{loginBean.loggedIn ? loginBean.user.fullName : 'Not signed in'}" 
+                                   disabled="true"/>
+                        
+                        <!-- Login/Logout actions -->
+                        <p:menuitem value="Login"  
+                                   outcome="/login.xhtml"  
+                                   rendered="#{!loginBean.loggedIn}"/>
+                        <p:menuitem value="Logout" 
+                                   action="#{loginBean.logout}" 
+                                   update="@form :growl"
+                                   rendered="#{loginBean.loggedIn}"/>
+                    </p:submenu>
+                </p:menubar>
+            </h:form>
+        </div>
+
+        <!-- Optional breadcrumb navigation -->
+        <div class="breadcrumbs">
+            <ui:insert name="breadcrumbs">
+                <!-- Default empty breadcrumb - can be overridden by pages -->
+            </ui:insert>
+        </div>
+
+        <!-- Main content area -->
+        <div class="content">
+            <!-- Page-specific content will be inserted here -->
+            <ui:insert name="content"/>
+        </div>
+    </div>
+</h:body>
+</html>

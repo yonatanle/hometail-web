@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!-- 
+    Registration Page - HomeTail Application
+    
+    This page allows new users to create an account by providing their personal information.
+    It includes form validation for required fields, email format, and password matching.
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - p: PrimeFaces components
+    - f: JSF core tags
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+<!-- Page Head Section -->
+<h:head>
+    <title>Register • HomeTail</title>
+    <!-- 
+        Inline CSS for the registration page
+        Note: For larger applications, consider moving this to an external stylesheet
+    -->
+    <style>
+        html, :root { --bg:#fffef5; --brand:#0d2c63; }
+        body{
+            margin:0; background:var('--bg', #fffef5);
+            font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+            min-height:100vh; display:grid; place-items:center;
+        }
+        .wrap{ width:100%; max-width:920px; padding:24px; }
+        .card{
+            margin:0 auto; max-width:640px; background:#fff;
+            border:1px solid #e6e9f0; border-radius:16px;
+            box-shadow:0 10px 30px rgba(13,44,99,.08);
+            padding:28px 26px 26px;
+        }
+        .brand{ color:var('--brand', #0d2c63); margin:0 0 .2rem; font-size:2rem; }
+        .subtitle{ color:#2d3a55; margin:0 0 1.25rem; font-size:1.15rem; }
+
+        /* --- 2-column form grid (labels | controls) --- */
+        .form-grid{
+            display:grid;
+            grid-template-columns: 180px minmax(0,1fr);
+            column-gap:16px; row-gap:12px;
+            align-items:center;
+        }
+        /* Stack on small screens */
+        @media (max-width: 640px){
+            .form-grid{ grid-template-columns: 1fr; }
+        }
+        .lbl{ color:#2d3a55; font-weight:600; }
+        .lbl.required::after{ content:" *"; color:#d33; }
+        .full{ width:100%; }
+        .actions{ display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; margin-top:14px; }
+        .btn-wide{ width:100%; }
+        .note{ color:#6b7a90; font-size:.9rem; margin-top:10px; }
+        .error-message { display:block; margin-top:10px; font-weight:500; }
+    </style>
+</h:head>
+
+<!-- Page Body -->
+<h:body>
+    <!-- 
+        View Action: Redirects authenticated users to the home page
+        This prevents logged-in users from accessing the registration page
+    -->
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{registerBean.redirectIfLoggedIn}" />
+    </f:metadata>
+
+    <!-- Main Content Container -->
+    <div class="wrap">
+        <!-- Registration Form Card -->
+        <div class="card">
+            <h2 class="brand">HomeTail</h2>
+            <div class="subtitle">Register</div>
+
+            <!-- 
+                Registration Form
+                - prependId="false" prevents JSF from prepending form ID to input IDs
+                - This makes client-side JavaScript and CSS selectors simpler
+            -->
+            <h:form id="form" prependId="false">
+                <!-- 
+                    Messages Configuration
+                    - p:messages: Shows all form and global messages in one place
+                    - h:messages: Default JSF messages are hidden as we're using PrimeFaces messages
+                -->
+                <p:messages id="msgs" showDetail="true" showSummary="false" autoUpdate="true" closable="true" />
+                <h:messages globalOnly="true" style="display:none;" />
+
+                <!-- 
+                    Form Fields Grid
+                    Uses CSS Grid for responsive layout (stacks on mobile)
+                    Each field includes appropriate validation and HTML5 attributes
+                -->
+                <div class="form-grid">
+                    <p:outputLabel for="firstName" value="First name" styleClass="lbl required"/>
+                    <p:inputText id="firstName" value="#{registerBean.firstName}"
+                                 required="true" requiredMessage="First name is required."
+                                 autocomplete="given-name" styleClass="full"/>
+
+                    <p:outputLabel for="lastName" value="Last name" styleClass="lbl required"/>
+                    <p:inputText id="lastName" value="#{registerBean.lastName}"
+                                 required="true" requiredMessage="Last name is required."
+                                 autocomplete="family-name" styleClass="full"/>
+
+                    <p:outputLabel for="email" value="Email" styleClass="lbl required"/>
+                    <p:inputText id="email" value="#{registerBean.email}" type="email"
+                                 required="true" requiredMessage="Email is required."
+                                 autocomplete="email" styleClass="full">
+                        <f:validateRegex pattern="^[A-Za-z0-9+_.-]+@(.+)$" />
+                    </p:inputText>
+
+                    <p:outputLabel for="password" value="Password" styleClass="lbl required"/>
+                    <p:password id="password" value="#{registerBean.password}"
+                                feedback="true" toggleMask="true"
+                                promptLabel="Type a password"
+                                weakLabel="Weak" goodLabel="Good" strongLabel="Strong"
+                                required="true" requiredMessage="Password is required."
+                                styleClass="full">
+                        <f:validateLength minimum="6" />
+                    </p:password>
+
+                    <p:outputLabel for="confirmPassword" value="Confirm password" styleClass="lbl required"/>
+                    <p:password id="confirmPassword" value="#{registerBean.confirmPassword}"
+                                feedback="false" toggleMask="true"
+                                required="true" requiredMessage="Please confirm your password."
+                                validatorMessage="Passwords do not match."
+                                styleClass="full">
+                        <f:validator validatorId="passwordMatchValidator" />
+                        <f:attribute name="passwordId" value="password" />
+                    </p:password>
+
+                    <p:outputLabel for="phone" value="Phone number" styleClass="lbl required"/>
+                    <p:inputMask id="phone" value="#{registerBean.phoneNumber}"
+                                 mask="059 999-9999" slotChar="_"
+                                 required="true" requiredMessage="Phone number is required."
+                                 styleClass="full"/>
+
+                </div>
+
+                <!-- 
+                    Form Actions
+                    - Register button submits the form
+                    - Back button returns to the welcome page
+                -->
+                <div class="actions">
+                    <p:commandButton value="Register" icon="pi pi-user-plus"
+                                     action="#{registerBean.register}"
+                                     update="msgs @form"
+                                     styleClass="p-button-primary p-button-lg btn-wide" />
+
+                    <p:button value="Back" icon="pi pi-arrow-left"
+                              outcome="/welcome?faces-redirect=true"
+                              styleClass="p-button-text" />
+                </div>
+
+                <!-- 
+                    Registration Footer
+                    - Provides a link to the login page for existing users
+                -->
+                <div class="note">
+                    Already have an account?
+                    <p:link outcome="/login?faces-redirect=true" value="Log in"/>
+                </div>
+
+                <!-- 
+                    Error Message Display
+                    - Shows server-side validation/registration errors
+                    - Only rendered when there's an error message to display
+                -->
+                <h:outputText value="#{registerBean.message}" style="color:#d33;"
+                              rendered="#{not empty registerBean.message}" styleClass="error-message"/>
+            </h:form>
+        </div><!-- End of card -->
+    </div><!-- End of wrap -->
+</h:body>
+</html>

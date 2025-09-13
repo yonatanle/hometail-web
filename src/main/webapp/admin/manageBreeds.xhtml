@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    manageBreeds.xhtml - Admin interface for managing animal breeds
+    
+    This page provides CRUD operations for animal breeds, allowing administrators to:
+    - View all breeds in a paginated table
+    - Filter breeds by category
+    - Create new breeds
+    - Edit existing breeds
+    - Delete breeds (with confirmation)
+    
+    Template: /WEB-INF/templates/adminLayout.xhtml
+    Controller: breedAdminBean (view-scoped)
+-->
+<ui:composition template="/WEB-INF/templates/adminLayout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+    <!-- Page title shown in browser tab -->
+    <ui:define name="title">Breeds</ui:define>
+    
+    <!-- Breadcrumb navigation -->
+    <ui:define name="breadcrumb">
+        <h:link outcome="/admin/index" value="Dashboard"/><span>/</span>
+        <span>Breeds</span>
+    </ui:define>
+
+    <!-- Main content area -->
+    <ui:define name="content">
+        <!-- Main form containing all components -->
+        <h:form id="form">
+            <!-- Global notification messages (3 second display time) -->
+            <p:growl id="growl" life="3000"/>
+
+            <!-- Main container with responsive width -->
+            <div class="container" style="max-width:1100px;margin:0 auto;padding:1rem;">
+                <!-- Page header -->
+                <h2 style="margin:0 0 1rem;">Breeds (Admin)</h2>
+
+                <!-- Action bar with filters and buttons -->
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 1rem;">
+                    <!-- Category filter dropdown -->
+                    <p:selectOneMenu id="catFilter" value="#{breedAdminBean.filterCategoryId}"
+                                     converter="jakarta.faces.Long"
+                                     style="min-width:260px;">
+                        <f:selectItem itemLabel="All categories" itemValue="#{null}" noSelectionOption="true"/>
+                        <f:selectItems value="#{breedAdminBean.categories}" var="c"
+                                       itemLabel="#{c.name}" itemValue="#{c.id}"/>
+                        <!-- AJAX update when category changes -->
+                        <p:ajax process="@this" listener="#{breedAdminBean.applyCategoryFilter}" update=":form:table"/>
+                    </p:selectOneMenu>
+
+                    <!-- Action buttons -->
+                    <p:commandButton value="New Breed" icon="pi pi-plus"
+                                     actionListener="#{breedAdminBean.startCreate}"
+                                     process="@this"
+                                     update=":form:dlg" oncomplete="PF('breedDlg').show()"/>
+                    <p:commandButton value="Refresh" icon="pi pi-refresh"
+                                     actionListener="#{breedAdminBean.reload}"
+                                     process="@this"
+                                     update=":form:table :form:growl"/>
+                </div>
+
+                <!-- Main breeds data table -->
+                <p:dataTable id="table" value="#{breedAdminBean.breeds}" var="b"
+                             rowKey="#{b.id}" paginator="true" rows="10" responsiveLayout="scroll"
+                             emptyMessage="No breeds found"
+                             paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             currentPageReportTemplate="Page {currentPage} of {totalPages} • Total records: {totalRecords}"
+                             rowsPerPageTemplate="5,10,20,50">
+                    
+                    <!-- ID column -->
+                    <p:column headerText="ID" style="width:90px">
+                        <h:outputText value="#{b.id}"/>
+                    </p:column>
+                    
+                    <!-- Category name (resolved from ID) -->
+                    <p:column headerText="Category">
+                        <h:outputText value="#{breedAdminBean.categoryName(b.categoryId)}"/>
+                    </p:column>
+                    
+                    <!-- Breed name -->
+                    <p:column headerText="Name">
+                        <h:outputText value="#{b.name}"/>
+                    </p:column>
+                    
+                    <!-- Active status with colored tag -->
+                    <p:column headerText="Active" style="width:120px;text-align:center;">
+                        <p:tag value="#{b.active ? 'Active' : 'Inactive'}"
+                               severity="#{b.active ? 'success' : 'warn'}"/>
+                    </p:column>
+                    
+                    <!-- Sort order -->
+                    <p:column headerText="Sort" style="width:100px;text-align:center;">
+                        <h:outputText value="#{b.sortOrder}"/>
+                    </p:column>
+                    
+                    <!-- Action buttons for each row -->
+                    <p:column style="width:220px;text-align:center;" headerText="Actions">
+                        <!-- Edit button -->
+                        <p:commandButton icon="pi pi-pencil" title="Edit" styleClass="p-button-text"
+                                         actionListener="#{breedAdminBean.startEdit(b)}"
+                                         process="@this"
+                                         update=":form:dlg" oncomplete="PF('breedDlg').show()"/>
+                        
+                        <!-- Delete button -->
+                        <p:commandButton icon="pi pi-trash" title="Delete" styleClass="p-button-text p-button-danger"
+                                         actionListener="#{breedAdminBean.confirmDelete(b)}"
+                                         process="@this"
+                                         update=":form:confirm"/>
+                    </p:column>
+                </p:dataTable>
+            </div>
+
+            <!-- ===========================================
+                       CREATE/EDIT BREED DIALOG
+                 =========================================== -->
+            <p:dialog id="dlg" header="#{breedAdminBean.editing ? 'Edit Breed' : 'New Breed'}"
+                      widgetVar="breedDlg" modal="true" resizable="false" width="520" dynamic="true">
+
+                <div class="p-fluid">
+                    <!-- Form validation messages -->
+                    <p:messages id="dlgMsgs"/>
+
+                    <!-- Category selection -->
+                    <p:selectOneMenu id="cat" value="#{breedAdminBean.form.categoryId}"
+                                     converter="jakarta.faces.Long"
+                                     style="width:100%" required="true" label="Category"
+                                     requiredMessage="Category is required">
+                        <f:selectItem itemLabel="Select category" itemValue="#{null}"/>
+                        <f:selectItems value="#{breedAdminBean.categories}" var="c"
+                                       itemLabel="#{c.name}" itemValue="#{c.id}"/>
+                    </p:selectOneMenu>
+
+                    <!-- Breed name input -->
+                    <p:inputText id="name" value="#{breedAdminBean.form.name}" 
+                                 label="Name" required="true"
+                                 requiredMessage="Name is required"
+                                 placeholder="Breed name"/>
+
+                    <!-- Active status toggle -->
+                    <div style="margin: 1rem 0;">
+                        <p:selectBooleanCheckbox id="active" value="#{breedAdminBean.form.active}"/>
+                        <h:outputLabel for="active" value=" Active" style="margin-left:.5rem;"/>
+                    </div>
+
+                    <!-- Sort order spinner -->
+                    <p:spinner id="sort" value="#{breedAdminBean.form.sortOrder}" 
+                               min="0" max="9999" stepFactor="1"
+                               placeholder="Sort order (optional)"/>
+
+                    <!-- Dialog action buttons -->
+                    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;">
+                        <p:commandButton value="Save" icon="pi pi-check"
+                                         actionListener="#{breedAdminBean.save}"
+                                         process=":form:dlg"
+                                         update=":form:table :form:growl"
+                                         oncomplete="if(!args.validationFailed) PF('breedDlg').hide();"/>
+                        <p:commandButton value="Cancel" icon="pi pi-times" type="button"
+                                         onclick="PF('breedDlg').hide()"/>
+                    </div>
+                </div>
+            </p:dialog>
+
+            <!-- ===========================================
+                       DELETE CONFIRMATION DIALOG
+                 =========================================== -->
+            <p:confirmDialog id="confirm" widgetVar="breedConfirm" 
+                             message="Delete this breed?"
+                             header="Confirm" severity="warn">
+                <p:commandButton value="Yes" icon="pi pi-check" styleClass="p-button-danger"
+                                 actionListener="#{breedAdminBean.deleteSelected}"
+                                 update="table growl" oncomplete="PF('breedConfirm').hide();"/>
+                <p:commandButton value="No" icon="pi pi-times" type="button"
+                                 onclick="PF('breedConfirm').hide();"/>
+            </p:confirmDialog>
+        </h:form>
+    </ui:define>
+</ui:composition>

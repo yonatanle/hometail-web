@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Submit/Edit Animal Page - HomeTail Application
+    
+    This page allows users to add a new animal for adoption or edit an existing one.
+    It includes form validation, image upload, and dynamic dropdowns for categories and breeds.
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - f: JSF core tags
+    - ui: Facelets templating
+    - p: PrimeFaces components
+-->
+<ui:composition template="/WEB-INF/templates/main.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+
+    <!-- 
+        View Parameters and Initialization
+        - Binds the 'id' URL parameter to animalBean.animalId
+        - Triggers animal data loading when editing an existing animal
+    -->
+    <f:metadata>
+        <f:viewParam name="id" value="#{animalBean.animalId}"/>
+        <f:event type="preRenderView" listener="#{animalBean.loadAnimalForEditListener}"/>
+    </f:metadata>
+
+    <ui:define name="title">
+        #{animalBean.animalId != null ? 'Edit Animal' : 'Add Animal'}
+    </ui:define>
+
+    <!-- 
+        Page-Specific Styles
+        - Custom styles for the animal submission form
+        - Includes responsive design for mobile devices
+        - Styles for form layout, buttons, and image preview
+    -->
+    <ui:define name="head">
+        <style>
+            .form-shell{max-width:780px;margin:0 auto}
+            .section-title{font-weight:600;color:#22345b;margin:1rem 0 .5rem}
+            .actions-bar{
+                position:sticky;bottom:0;background:#fff;
+                border-top:1px solid #e9eef5;padding:.75rem;
+                z-index:5;border-bottom-left-radius:10px;border-bottom-right-radius:10px
+            }
+            .actions{display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap}
+            .actions .p-button{min-width:140px}
+            @media (max-width:600px){
+                .actions{justify-content:stretch}
+                .actions .p-button{flex:1 1 auto}
+            }
+            .actions-row{
+                display:flex;
+                gap:.75rem;
+                justify-content:space-between;
+                align-items:center;
+            }
+
+            /* keep buttons side-by-side even inside .p-fluid containers */
+            .actions-row .ui-button{
+                width:auto !important;   /* override PF fluid */
+                flex:1 1 0;              /* share row evenly */
+                min-width:140px;
+            }
+        </style>
+    </ui:define>
+
+    <!-- 
+        Breadcrumb Navigation
+        - Shows the user's current location in the application
+        - Links back to Home and My Animals pages
+    -->
+    <ui:define name="breadcrumbs">
+        <p:breadCrumb>
+            <p:menuitem value="Home" outcome="/home.xhtml"/>
+            <p:menuitem value="My Animals" outcome="/myAnimals.xhtml"/>
+            <p:menuitem value="#{animalBean.animalId != null ? 'Edit Animal' : 'Add Animal'}" disabled="true"/>
+        </p:breadCrumb>
+    </ui:define>
+
+    <!-- 
+        Main Content Area
+        - Contains the animal submission form
+        - Includes JavaScript for client-side image preview
+    -->
+    <ui:define name="content">
+        <!-- 
+            Image Preview Script
+            - Handles client-side image preview before form submission
+            - Updates the preview when a new image is selected
+        -->
+        <script type="text/javascript">
+            function previewImage(input) {
+                const file = input.files[0];
+                const preview = document.getElementById("newImagePreview");
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.style.display = "block";
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.style.display = "none";
+                    preview.src = "";
+                }
+            }
+        </script>
+
+        <!-- 
+            Animal Form Container
+            - Wraps the entire form with max-width constraints
+            - Uses multipart form-data to support file uploads
+        -->
+        <!-- Loading Dialog -->
+        <p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+            <p class="p-m-0">
+                <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+                <span class="p-ml-2">Processing, please wait...</span>
+            </p>
+        </p:dialog>
+        
+        <div class="form-shell">
+            <h:form id="animalForm" enctype="multipart/form-data">
+
+                <!-- 
+                    Global Messages
+                    - Displays form validation and server messages
+                    - Automatically updates when the form is submitted
+                -->
+                <!-- Show form validation messages -->
+                <p:messages id="msgs" 
+                           showDetail="true"
+                           showSummary="true"
+                           autoUpdate="true" 
+                           closable="true"
+                           globalOnly="false"
+                           escape="false"
+                           skipDetailIfEqualsSummary="true"
+                           warnClass="ui-messages-warn" 
+                           errorClass="ui-messages-error" 
+                           fatalClass="ui-messages-fatal"
+                           infoClass="ui-messages-info" />
+
+                <!-- 
+                    Form Card
+                    - Contains all form fields in a card layout
+                    - Organized into logical sections with dividers
+                -->
+                <p:card style="max-width:800px;margin:0 auto;border-radius:12px;">
+                    <f:facet name="title">
+                        #{animalBean.animalId != null ? 'Edit Animal' : 'Add Animal'}
+                    </f:facet>
+
+                    <!-- 
+                        Section: Basic Information
+                        - Contains essential animal details
+                        - All fields are required
+                    -->
+                    <p:divider align="left"><b class="section-title">Basic info</b></p:divider>
+
+                    <!-- Name -->
+                    <div class="field">
+                        <p:outputLabel for="name" value="Name *"/>
+                        <p:inputText id="name" value="#{animalBean.name}"
+                                     required="true" requiredMessage="Name is required." />
+                    </div>
+
+                    <!-- Category -->
+                    <div class="field">
+                        <p:outputLabel for="categoryIdMenu" value="Category *"/>
+                        <p:selectOneMenu id="categoryIdMenu"
+                                         value="#{animalBean.categoryId}"
+                                         converter="jakarta.faces.Long"
+                                         required="true"
+                                         requiredMessage="Category is required.">
+                            <f:selectItem itemLabel="Select a category" itemValue="#{null}" noSelectionOption="true"/>
+                            <f:selectItems value="#{animalBean.categories}" var="c"
+                                           itemLabel="#{c.name}" itemValue="#{c.id}"/>
+                            <p:ajax process="@this"
+                                    listener="#{animalBean.onCategoryChange}"
+                                    update="breedIdMenu"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <!-- Breed (depends on category) -->
+                    <div class="field">
+                        <p:outputLabel for="breedIdMenu" value="Breed *"/>
+                        <p:selectOneMenu id="breedIdMenu"
+                                         value="#{animalBean.breedId}"
+                                         converter="jakarta.faces.Long"
+                                         required="true"
+                                         requiredMessage="Breed is required."
+                                         filter="true"
+                                         disabled="#{empty animalBean.categoryId}">
+                            <f:selectItem itemLabel="#{empty animalBean.categoryId ? 'Select category first' : 'Select a breed'}"
+                                          itemValue="#{null}" noSelectionOption="true"/>
+                            <f:selectItems value="#{animalBean.breeds}" var="b"
+                                           itemLabel="#{b.name}" itemValue="#{b.id}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <!-- Gender -->
+                    <div class="field">
+                        <p:outputLabel for="genderMenu" value="Gender *"/>
+                        <p:selectOneMenu id="genderMenu"
+                                         value="#{animalBean.gender}"
+                                         required="true"
+                                         requiredMessage="Gender is required.">
+                            <f:selectItem itemLabel="Select gender" itemValue="#{null}" noSelectionOption="true"/>
+                            <!-- Map<String(label), String(value)> -->
+                            <f:selectItems value="#{animalBean.genderOptions}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <!-- Birthday -->
+                    <div class="field">
+                        <p:outputLabel for="birthday" value="Birthday *"/>
+                        <p:datePicker id="birthday"
+                                      value="#{animalBean.birthday}"
+                                      pattern="yyyy-MM-dd"
+                                      showIcon="true"
+                                      yearNavigator="true"
+                                      monthNavigator="true"
+                                      required="true"
+                                      requiredMessage="Birthday is required."/>
+                    </div>
+
+                    <!-- Size -->
+                    <div class="field">
+                        <p:outputLabel for="sizeMenu" value="Size *"/>
+                        <p:selectOneMenu id="sizeMenu"
+                                         value="#{animalBean.size}"
+                                         required="true"
+                                         requiredMessage="Size is required.">
+                            <f:selectItem itemLabel="Select size" itemValue="#{null}" noSelectionOption="true"/>
+                            <!-- Map<String(label), String(value)> -->
+                            <f:selectItems value="#{animalBean.sizeOptions}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <!-- 
+                        Section: Animal Description
+                        - Contains short and long descriptions
+                        - Helps potential adopters learn about the animal
+                    -->
+                    <p:divider align="left"><b class="section-title">Description</b></p:divider>
+
+                    <!-- Short Description -->
+                    <div class="field">
+                        <p:outputLabel for="shortDescription" value="Short Description *"/>
+                        <p:inputText id="shortDescription" value="#{animalBean.shortDescription}"
+                                     required="true" requiredMessage="Short description is required." />
+                    </div>
+
+                    <!-- Long Description -->
+                    <div class="field">
+                        <p:outputLabel for="longDescription" value="Long Description *"/>
+                        <p:inputTextarea id="longDescription"
+                                         value="#{animalBean.longDescription}"
+                                         autoResize="true" rows="4"
+                                         required="true" requiredMessage="Long description is required." />
+                    </div>
+
+                    <!-- 
+                        Section: Animal Photos
+                        - Allows uploading and previewing animal images
+                        - Shows current image when editing
+                    -->
+                    <p:divider align="left"><b class="section-title">Photos</b></p:divider>
+
+                    <!-- Current image + upload -->
+                    <div class="grid">
+                        <div class="col-12 md:col-6">
+                            <h:panelGroup rendered="#{not empty animalBean.image}">
+                                <p:outputLabel value="Current Image"/>
+                                <br/>
+                                <h:graphicImage id="imagePreview" alt="Current image"
+                                     value="#{animalBean.image != null and animalBean.image.startsWith('/uploads/')
+                                                 ? 'http://localhost:9090'.concat(animalBean.image)
+                                                 : animalBean.image}"
+                                     style="width:180px; height:auto; border:1px solid #e5e7eb; border-radius:8px;"
+                                     rendered="#{not empty animalBean.image}"/>
+                            </h:panelGroup>
+                        </div>
+
+                        <div class="col-12 md:col-6">
+                            <p:outputLabel for="newFile" value="Upload Image"/>
+                            <h:inputFile id="newFile" value="#{animalBean.uploadedFile}" onchange="previewImage(this)"/>
+                            <div style="margin-top:.5rem;">
+                                <img id="newImagePreview" alt="New image preview"
+                                     src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+                                     style="width:180px; display:none; border:1px solid #e5e7eb; border-radius:8px;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons in one row -->
+                    <div class="p-grid p-justify-between p-mt-4">
+                        <div class="p-field p-col-12 p-md-8" style="display:flex;gap:.5rem;justify-content:flex-end;">
+                        <p:button value="Back" icon="pi pi-arrow-left"
+                                    outcome="/myAnimals?faces-redirect=true"
+                                    styleClass="p-button-secondary" />
+
+                            <p:commandButton value="#{animalBean.animalId != null ? 'Update' : 'Add'}"
+                                           icon="pi pi-save"
+                                           action="#{animalBean.submitAnimal}"
+                                           update="@form msgs growl"
+                                           process="@form"
+                                           style="float: right;"
+                                           onstart="if (args &amp;&amp; !args.validationFailed) { PF('statusDialog').show(); }"
+                                           oncomplete="if (args &amp;&amp; args.validationFailed) { PF('statusDialog').hide(); }" />
+                        </div>
+                    </div>
+                </p:card>
+
+            </h:form>
+        </div>
+    </ui:define>
+</ui:composition>

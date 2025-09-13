@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    manageCategories.xhtml - Admin interface for managing animal categories
+    
+    This page provides CRUD operations for animal categories, allowing administrators to:
+    - View all categories in a paginated table
+    - Create new categories
+    - Edit existing categories
+    - Delete categories (with confirmation)
+    - Toggle category active status
+    - Set sort order for categories
+    
+    Template: /WEB-INF/templates/adminLayout.xhtml
+    Controller: categoryAdminBean (view-scoped)
+-->
+<ui:composition template="/WEB-INF/templates/adminLayout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+    <!-- Security: Redirect unauthenticated users to login page -->
+    <f:event type="preRenderView" listener="#{loginBean.redirectIfNotLoggedIn}"/>
+
+    <!-- Page title shown in browser tab -->
+    <ui:define name="title">Categories</ui:define>
+
+    <!-- Breadcrumb navigation -->
+    <ui:define name="breadcrumb">
+        <h:link outcome="/admin/index" value="Dashboard"/><span>/</span>
+        <span>Categories</span>
+    </ui:define>
+
+    <!-- Main content area -->
+    <ui:define name="content">
+        <!-- Single form containing all components for this view -->
+        <h:form id="form">
+            <!-- Global notification messages (3 second display time) -->
+            <p:growl id="growl" life="3000" severity="info,success"/>
+
+            <!-- Main container with responsive width -->
+            <div class="container" style="max-width:1100px;margin:0 auto;padding:1rem;">
+                <!-- Page header -->
+                <h2 style="margin:0 0 1rem;">Categories (Admin)</h2>
+
+                <!-- Action toolbar with buttons -->
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 1rem;">
+                    <!-- Button to open create new category dialog -->
+                    <p:commandButton value="New Category" icon="pi pi-plus"
+                                     actionListener="#{categoryAdminBean.startCreate}"
+                                     process="@this"
+                                     update=":form:dlg" oncomplete="PF('catDlg').show()"/>
+
+                    <!-- Refresh button to reload data from server -->
+                    <p:commandButton value="Refresh" icon="pi pi-refresh"
+                                     actionListener="#{categoryAdminBean.reload}"
+                                     process="@this"
+                                     update=":form:table :form:growl"/>
+                </div>
+
+                <!-- ===========================================
+                             CATEGORIES TABLE
+                     =========================================== -->
+                <p:dataTable id="table"
+                             value="#{categoryAdminBean.categories}"
+                             var="c"
+                             paginator="true"
+                             rows="10"
+                             style="width:100%"
+                             emptyMessage="No categories found"
+                             paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             currentPageReportTemplate="Page {currentPage} of {totalPages} • Total records: {totalRecords}"
+                             rowsPerPageTemplate="5,10,20,50">
+
+                    <!-- Category ID column -->
+                    <p:column headerText="ID" style="width:90px">
+                        <h:outputText value="#{c.id}"/>
+                    </p:column>
+
+                    <!-- Category name column -->
+                    <p:column headerText="Name">
+                        <h:outputText value="#{c.name}"/>
+                    </p:column>
+
+                    <!-- Active status with color-coded tag -->
+                    <p:column headerText="Status" style="width:120px;text-align:center;">
+                        <p:tag value="#{c.active ? 'Active' : 'Inactive'}"
+                               severity="#{c.active ? 'success' : 'warn'}"/>
+                    </p:column>
+
+                    <!-- Sort order column -->
+                    <p:column headerText="Sort" style="width:100px;text-align:center;">
+                        <h:outputText value="#{c.sortOrder}"/>
+                    </p:column>
+
+                    <!-- Action buttons for each row -->
+                    <p:column headerText="Actions" style="width:220px;text-align:center;">
+                        <!-- Edit button - opens edit dialog -->
+                        <p:commandButton icon="pi pi-pencil" title="Edit" styleClass="p-button-text"
+                                         actionListener="#{categoryAdminBean.startEdit(c)}"
+                                         process="@this"
+                                         update=":form:dlg" oncomplete="PF('catDlg').show()"/>
+                        
+                        <!-- Delete button - opens confirmation dialog -->
+                        <p:commandButton icon="pi pi-trash" title="Delete"
+                                         styleClass="p-button-text p-button-danger"
+                                         actionListener="#{categoryAdminBean.confirmDelete(c)}"
+                                         process="@this"
+                                         update=":form:confirm" oncomplete="PF('catConfirm').show()"/>
+                    </p:column>
+                </p:dataTable>
+            </div>
+
+            <!-- ===========================================
+                         CREATE/EDIT DIALOG
+                 =========================================== -->
+            <p:dialog id="dlg"
+                      header="#{categoryAdminBean.editing ? 'Edit Category' : 'New Category'}"
+                      widgetVar="catDlg" 
+                      modal="true" 
+                      resizable="false" 
+                      width="480">
+                
+                <!-- Validation and status messages -->
+                <p:messages id="dlgMsgs" showDetail="true" showSummary="true"  skipDetailIfEqualsSummary="true" />
+                
+                <!-- Form layout with 2 columns (label + input) -->
+                <h:panelGrid columns="2" cellpadding="5" style="width: 100%;">
+                    <!-- Category name input -->
+                    <h:outputLabel for="name" value="Name: *" style="font-weight: bold;"/>
+                    <p:inputText id="name" 
+                               value="#{categoryAdminBean.form.name}" 
+                               required="true"
+                               style="width: 100%;"
+                               requiredMessage="Name is required"/>
+                    
+                    <!-- Active status toggle -->
+                    <h:outputLabel for="active" value="Active:" style="font-weight: bold;"/>
+                    <p:selectBooleanCheckbox id="active" 
+                                          value="#{categoryAdminBean.form.active}" 
+                                          style="margin-top: 5px;"/>
+                    
+                    <!-- Sort order input with number validation -->
+                    <h:outputLabel for="sortOrder" value="Sort Order:" style="font-weight: bold;"/>
+                    <p:spinner id="sortOrder" 
+                             value="#{categoryAdminBean.form.sortOrder}" 
+                             min="0" 
+                             max="9999"
+                             step="1"
+                             style="width: 100%;">
+                        <f:convertNumber integerOnly="true" />
+                    </p:spinner>
+                </h:panelGrid>
+                
+                <!-- Dialog footer with action buttons -->
+                <f:facet name="footer">
+                    <!-- Cancel button - closes dialog without saving -->
+                    <p:commandButton value="Cancel" 
+                                   icon="pi pi-times" 
+                                   styleClass="p-button-text"
+                                   onclick="PF('catDlg').hide()"
+                                   immediate="true"/>
+                    
+                    <!-- Save/Update button - submits the form -->
+                    <p:commandButton value="#{categoryAdminBean.editing ? 'Update' : 'Save'}" 
+                                   icon="pi #{categoryAdminBean.editing ? 'pi-save' : 'pi-check'}"
+                                   action="#{categoryAdminBean.save}"
+                                   update="@form:table @form:growl @form:dlgMsgs"
+                                   process="@form"
+                                   oncomplete="if(!args.validationFailed) PF('catDlg').hide();"/>
+                </f:facet>
+            </p:dialog>
+
+            <!-- ===========================================
+                         DELETE CONFIRMATION DIALOG
+                 =========================================== -->
+            <p:confirmDialog id="confirm" widgetVar="catConfirm"
+                             message="Delete this category?" header="Confirm" severity="warn">
+                <p:commandButton value="Yes" icon="pi pi-check" styleClass="p-button-danger"
+                                 actionListener="#{categoryAdminBean.deleteSelected}"
+                                 update=":form:table :form:growl"
+                                 oncomplete="PF('catConfirm').hide();"/>
+                <p:commandButton value="No" icon="pi pi-times" type="button"
+                                 onclick="PF('catConfirm').hide();"/>
+            </p:confirmDialog>
+        </h:form>
+    </ui:define>
+</ui:composition>

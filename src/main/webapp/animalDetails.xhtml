@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Animal Details Page - HomeTail Application
+    
+    This page displays detailed information about a specific animal.
+    It shows different views based on user role (owner, potential adopter, or guest).
+    
+    Features:
+    - View animal details and photos
+    - Request adoption (for logged-in users)
+    - Manage animal (for owners)
+    - View adoption requests (for owners)
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - f: JSF core tags
+    - ui: Facelets templating
+    - p: PrimeFaces components
+-->
+<ui:composition template="/WEB-INF/templates/main.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+
+    <!-- 
+        View Parameters and Initialization
+        - Binds the 'id' URL parameter to adoptionRequestBean.animalId
+        - Loads animal data when the page is first accessed
+        - Shows error messages for missing or invalid IDs
+    -->
+    <f:metadata>
+        <f:viewParam name="id"
+                     value="#{adoptionRequestBean.animalId}"
+                     required="true"
+                     converterMessage="Invalid animal id."
+                     requiredMessage="Animal id is required."/>
+        <f:viewAction action="#{adoptionRequestBean.onInitialLoad}" onPostback="false"/>
+    </f:metadata>
+
+    <ui:define name="title">Animal Details</ui:define>
+
+    <!-- 
+        Breadcrumb Navigation
+        - Shows the user's current location in the application
+        - Dynamically changes based on user role (owner or visitor)
+        - Links back to appropriate listing pages
+    -->
+    <ui:define name="breadcrumbs">
+        <p:breadCrumb>
+            <p:menuitem value="Home" outcome="/home.xhtml"/>
+            <p:menuitem value="View Animals" outcome="/viewAnimals.xhtml" rendered="#{!adoptionRequestBean.owner}"/>
+            <p:menuitem value="My Animals" outcome="/myAnimals.xhtml" rendered="#{adoptionRequestBean.owner}"/>
+            <p:menuitem value="#{adoptionRequestBean.animal != null ? adoptionRequestBean.animal.name : 'Details'}" disabled="true"/>
+        </p:breadCrumb>
+    </ui:define>
+
+    <!-- 
+        Main Content Area
+        - Contains all page content
+        - Uses responsive design for different screen sizes
+    -->
+    <ui:define name="content">
+        <!-- 
+            Page-Specific Styles
+            - Defines layout and appearance for the animal details page
+            - Uses responsive design patterns
+            - Maintains consistent spacing and typography
+        -->
+        <style>
+            .container { max-width: 900px; margin: 0 auto; }
+            .page-title { text-align: center; margin-bottom: 12px; }
+
+            /* NEW: photo + facts row */
+            .details-row{
+                display:flex; gap:20px; align-items:flex-start; margin-bottom: 16px;
+            }
+            .details-row .img{
+                flex:0 0 320px;
+            }
+            .animal-img{
+                width:100%; height:auto; border-radius:8px; border:1px solid #ddd;
+            }
+            .details-row .info{
+                flex:1 1 auto; line-height:1.45;
+            }
+            .kv{ margin:2px 0 }
+            .kv b{ display:inline-block; min-width:120px; font-weight:600 }
+
+            .btn-row { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+            .btn-row .ui-button { flex: 1; max-width: 240px; }
+
+            @media (max-width: 720px){
+                .details-row{ flex-direction:column }
+                .details-row .img{ flex:0 0 auto }
+                .kv b{ min-width:100px }
+                .btn-row { flex-direction: column; align-items: stretch; }
+                .btn-row .ui-button { max-width: none; }
+            }
+        </style>
+
+        <!-- 
+            Main Container
+            - Wraps all content with max-width constraints
+            - Centers the content on the page
+        -->
+        <div class="container">
+            <h2 class="page-title">Animal Details</h2>
+
+            <!-- 
+                Animal Details Row
+                - Displays animal image on the left
+                - Shows animal information on the right
+                - Uses flexbox for responsive layout
+            -->
+            <div class="details-row">
+                <div class="img">
+                    <h:graphicImage value="#{adoptionRequestBean.animal.image.startsWith('/uploads/')
+                                             ? 'http://localhost:9090'.concat(adoptionRequestBean.animal.image)
+                                             : adoptionRequestBean.animal.image}"
+                                    alt="Animal Image"
+                                    styleClass="animal-img"/>
+                </div>
+
+                <div class="info">
+                    <div class="kv"><b>Name:</b> <h:outputText value="#{adoptionRequestBean.animal.name}"/></div>
+                    <div class="kv"><b>Category:</b> <h:outputText value="#{adoptionRequestBean.animal.categoryName}"/></div>
+                    <div class="kv"><b>Breed:</b> <h:outputText value="#{adoptionRequestBean.animal.breedName}"/></div>
+                    <div class="kv"><b>Gender:</b> <h:outputText value="#{adoptionRequestBean.animal.gender}"/></div>
+                    <div class="kv"><b>Age:</b> <h:outputText value="#{adoptionRequestBean.animal.ageDescription}"/></div>
+                    <div class="kv"><b>Size:</b> <h:outputText value="#{adoptionRequestBean.animal.size}"/></div>
+                    <div class="kv"><b>Description:</b> <h:outputText value="#{adoptionRequestBean.animal.longDescription}"/></div>
+
+                    <!-- Owner info (only when logged in) -->
+                    <h:panelGroup rendered="#{loginBean.loggedIn}">
+                        <div style="margin-top:12px">
+                            <b>Owner Information:</b><br/>
+                            <h:outputText value="#{adoptionRequestBean.animal.ownerName}"/><br/>
+                            <h:outputText value="#{adoptionRequestBean.animal.ownerEmail}"/><br/>
+                            <h:outputText value="#{adoptionRequestBean.animal.ownerPhone}"/>
+                        </div>
+                    </h:panelGroup>
+                    <h:panelGroup rendered="#{adoptionRequestBean.animal.adopted}">
+                        <p style="color:green; font-weight:bold;">This animal has been adopted.</p>
+                    </h:panelGroup>
+                </div>
+            </div>
+
+            <!-- 
+                Logged-In User Section
+                - Shows additional options for authenticated users
+                - Displays different content based on user role (owner vs potential adopter)
+            -->
+            <h:panelGroup rendered="#{loginBean.loggedIn}">
+
+                <!-- 
+                    Owner View
+                    - Only visible to the animal's owner
+                    - Shows adoption requests and management options
+                -->
+                <h:panelGroup rendered="#{adoptionRequestBean.owner}">
+                    <h:form id="animalActionsForm">
+                        <h:inputHidden value="#{adoptionRequestBean.animalId}"/>
+
+                        <p>
+                            <strong>Total Requests:</strong>
+                            <h:outputText value="#{adoptionRequestBean.adoptionCount}"/>
+                        </p>
+
+                        <h:panelGroup rendered="#{adoptionRequestBean.adoptionCount > 0}" layout="block" style="text-align:center;">
+                            <div style="overflow-x:auto; width:100%;">
+                                <ui:include src="adoptionRequestsTable.xhtml"/>
+                            </div>
+                        </h:panelGroup>
+
+                        <!-- Owner actions -->
+                        <div class="btn-row">
+                            <h:link outcome="/myAnimals.xhtml" styleClass="ui-button ui-widget">
+                                ← Back to My Animals
+                            </h:link>
+
+                            <p:button value="Edit Animal"
+                                      icon="pi pi-pencil"
+                                      outcome="/submitAnimal?faces-redirect=true">
+                                <f:param name="id" value="#{adoptionRequestBean.animalId}"/>
+                            </p:button>
+
+                            <p:commandButton value="Delete Animal"
+                                             icon="pi pi-trash"
+                                             type="button"
+                                             onclick="PF('deleteConfirm').show();"
+                                             styleClass="p-button-danger"/>
+                        </div>
+
+                        <p:confirmDialog widgetVar="deleteConfirm"
+                                         header="Confirm Deletion"
+                                         message="Are you sure you want to delete this animal? All related adoption requests will be removed!"
+                                         severity="warn"
+                                         showEffect="fade" hideEffect="fade">
+                            <p:commandButton value="Yes, Delete"
+                                             action="#{adoptionRequestBean.deleteAnimal}"
+                                             ajax="false"
+                                             icon="pi pi-check"
+                                             styleClass="p-button-danger"/>
+                            <p:commandButton value="Cancel"
+                                             type="button"
+                                             onclick="PF('deleteConfirm').hide();"
+                                             icon="pi pi-times"
+                                             styleClass="p-button-secondary"/>
+                        </p:confirmDialog>
+                    </h:form>
+                </h:panelGroup>
+
+                <!-- 
+                    Non-Owner View
+                    - Visible to logged-in users who don't own the animal
+                    - Shows adoption request form or status
+                -->
+                <h:panelGroup rendered="#{not adoptionRequestBean.owner}">
+                    <!-- Already sent request -->
+                    <h:panelGroup rendered="#{adoptionRequestBean.hasSentRequest}">
+                        <h:form id="adoptionRequestForm">
+                            <h:inputHidden value="#{adoptionRequestBean.animalId}"/>
+
+                            <div class="form-group">
+                                <p><strong>Status:</strong> <h:outputText value="#{adoptionRequestBean.existingRequest.status}"/></p>
+
+                                <p:inputTextarea id="noteInput"
+                                                 value="#{adoptionRequestBean.note}"
+                                                 required="true"
+                                                 requiredMessage="Please enter a note"
+                                                 maxlength="500"
+                                                 autoResize="false"
+                                                 style="width:100%;">
+                                    <f:validateLength minimum="1" maximum="500"/>
+                                </p:inputTextarea>
+                                <p:message id="noteMsg" for="noteInput" showDetail="false" showSummary="true"
+                                           style="color:#e24c4c; display:block; margin-top:5px;"/>
+                                <!-- inline message right under the field -->
+                            </div>
+
+                            <div class="btn-row">
+                                <h:link outcome="/myAdoptionRequests.xhtml" styleClass="ui-button ui-widget">
+                                    ← Back to My Requests
+                                </h:link>
+
+                                <!-- Update Request -->
+                                <p:commandButton id="updateBtn"
+                                                 value="Update Request"
+                                                 action="#{adoptionRequestBean.updateAdoptionRequest}"
+                                                 rendered="#{not adoptionRequestBean.animal.adopted}"
+                                                 process="@this noteInput"
+                                                 update="noteInput noteMsg :growl"
+                                                 partialSubmit="true"
+                                                 onstart="var d=PF('statusDialog'); if(d){d.show();}"
+                                                 oncomplete="var d=PF('statusDialog'); if(d){d.hide();}
+                             if(!(args &amp;&amp; args.validationFailed)){
+                               setTimeout(function(){ window.location.reload(); }, 1200);
+                             }"/>
+
+                                <p:commandButton value="Cancel Request"
+                                               type="button"
+                                               onclick="PF('cancelConfirm').show();"
+                                               styleClass="ui-button-danger p-ml-2"/>
+                            </div>
+
+                            <p:confirmDialog widgetVar="cancelConfirm"
+                                             header="Confirm Cancellation"
+                                             message="Are you sure you want to cancel this adoption request?"
+                                             severity="warn"
+                                             showEffect="fade" hideEffect="fade">
+                                <p:commandButton value="Yes, Cancel"
+                                                 action="#{adoptionRequestBean.cancelRequest}"
+                                                 ajax="false"
+                                                 icon="pi pi-check"
+                                                 styleClass="p-button-danger"/>
+                                <p:commandButton value="No"
+                                                 type="button"
+                                                 onclick="PF('cancelConfirm').hide();"
+                                                 icon="pi pi-times"
+                                                 styleClass="p-button-secondary"/>
+                            </p:confirmDialog>
+                        </h:form>
+                    </h:panelGroup>
+
+                    <!-- No request yet -->
+                    <h:panelGroup rendered="#{not adoptionRequestBean.hasSentRequest and not adoptionRequestBean.animal.adopted}">
+                        <h:form id="adoptMeForm">
+                            <h:inputHidden value="#{adoptionRequestBean.animalId}"/>
+
+                            <div class="form-group">
+                                <h:outputLabel for="note" value="Write a message to the owner:" style="display: block; margin-bottom: 5px;"/>
+                                <p:inputTextarea id="note" 
+                                               value="#{adoptionRequestBean.note}" 
+                                               rows="3" 
+                                               cols="50"
+                                               required="true"
+                                               requiredMessage="Please enter a message to the owner"
+                                               maxlength="1000"
+                                               autoResize="false"
+                                               style="width: 100%;">
+                                    <f:validateLength minimum="3" maximum="1000" />
+                                </p:inputTextarea>
+                                <p:message for="note" showDetail="false" showSummary="true"
+                                           style="color: #e24c4c; display: block; margin-top: 5px;"/>
+                            </div>
+
+                            <div class="btn-row" style="margin-top: 20px;">
+                                <h:link outcome="/viewAnimals.xhtml" styleClass="ui-button ui-widget">
+                                    ← Back to Animals
+                                </h:link>
+
+                                <p:commandButton value="Send Request"
+                                               action="#{adoptionRequestBean.send}"
+                                               rendered="#{not adoptionRequestBean.animal.adopted}"
+                                               update="@form :growl"
+                                               process="@this note"
+                                               styleClass="p-button-primary"
+                                               onstart="if(PF('statusDialog')) { PF('statusDialog').show(); }"
+                                               oncomplete="if(PF('statusDialog')) { PF('statusDialog').hide(); }">
+                                    <f:param name="ignoreValidation" value="true" />
+                                </p:commandButton>
+                            </div>
+                        </h:form>
+                    </h:panelGroup>
+                </h:panelGroup>
+            </h:panelGroup>
+
+            <!-- 
+                Guest View
+                - Shown to users who are not logged in
+                - Prompts for login to access adoption features
+            -->
+            <h:panelGroup rendered="#{not loginBean.loggedIn}">
+                <p><em>Please <h:link outcome="/login.xhtml">log in</h:link> to view adoption options.</em></p>
+            </h:panelGroup>
+        </div>
+    </ui:define>
+</ui:composition>

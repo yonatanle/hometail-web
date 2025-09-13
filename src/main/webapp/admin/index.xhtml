@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Admin Dashboard - Main landing page for administrative functions
+    Template: /WEB-INF/templates/adminLayout.xhtml
+    Controller: Managed beans (loginBean for user info)
+-->
+<ui:composition template="/WEB-INF/templates/adminLayout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:p="http://primefaces.org/ui">
+
+    <!-- Page title shown in browser tab -->
+    <ui:define name="title">Dashboard</ui:define>
+    
+    <!-- Breadcrumb navigation item -->
+    <ui:define name="breadcrumb">Dashboard</ui:define>
+
+    <!-- Main content area -->
+    <ui:define name="content">
+        <!-- 
+            ===========================================
+                       PAGE-SPECIFIC STYLES
+            ===========================================
+            Note: For better maintainability, consider moving these to a separate CSS file 
+            if they grow larger or are reused across multiple pages.
+        -->
+        <style>
+            /* Root variable for consistent theming */
+            :root { 
+                --brand: #0d2c63; 
+            }
+            
+            /* Main container for the dashboard */
+            .dash-wrap {
+                min-height: 60vh;              /* Minimum height of 60% viewport height */
+                display: grid;                 /* Centering content */
+                place-items: center;           /* Center both horizontally and vertically */
+                padding: 1.5rem;               /* Spacing around the content */
+            }
+            
+            /* Card container for dashboard content */
+            .dash-card {
+                width: 100%;
+                max-width: 720px;              /* Maximum width for better readability */
+                background: #fff;               /* White background */
+                border: 1px solid #e6e9f0;     /* Subtle border */
+                border-radius: 16px;            /* Rounded corners */
+                box-shadow: 0 10px 30px rgba(13, 44, 99, .08); /* Soft shadow for depth */
+                text-align: center;
+                padding: 32px 28px;             /* Internal spacing */
+            }
+            
+            /* Dashboard title styling */
+            .dash-title {
+                margin: 0 0 .25rem;            /* Tight margin below title */
+                color: var('--brand', #0d2c63);   /* Use brand color with fallback */
+                font-size: 1.8rem;              /* Large, prominent text */
+                letter-spacing: .2px;           /* Slight letter spacing for better readability */
+            }
+            
+            /* Subtitle text styling */
+            .dash-subtitle {
+                margin: 0 0 1.25rem;           /* Spacing below subtitle */
+                color: #6b7a90;                /* Muted text color */
+                font-size: 1.05rem;            /* Slightly larger than body text */
+            }
+            
+            /* Container for action buttons */
+            .dash-actions {
+                display: flex;                 /* Horizontal layout */
+                flex-wrap: wrap;               /* Wrap on smaller screens */
+                gap: .75rem;                   /* Space between buttons */
+                justify-content: center;        /* Center buttons horizontally */
+            }
+            
+            /* Style for dashboard action buttons */
+            .dash-btn { 
+                min-width: 240px;              /* Minimum width for better click targets */
+            }
+        </style>
+
+        <!-- Main dashboard content -->
+        <div class="dash-wrap">
+            <div class="dash-card">
+                <!-- Dashboard heading -->
+                <h2 class="dash-title">Admin Dashboard</h2>
+                
+                <!-- Personalized welcome message showing the logged-in admin's name -->
+                <div class="dash-subtitle">
+                    Welcome#{loginBean.fullName != null ? (', ' += loginBean.fullName) : ''}!
+                </div>
+
+                <!-- Action buttons for admin tasks -->
+                <div class="dash-actions">
+                    <!-- Button to navigate to Categories management -->
+                    <p:button value="Manage Categories"
+                              icon="pi pi-tag"
+                              outcome="/admin/manageCategories"
+                              styleClass="p-button-primary p-button-raised p-button-lg p-button-rounded dash-btn"/>
+
+                    <!-- Button to navigate to Breeds management -->
+                    <p:button value="Manage Breeds"
+                              icon="pi pi-paw"
+                              outcome="/admin/manageBreeds"
+                              styleClass="p-button-outlined p-button-lg p-button-rounded dash-btn"/>
+                </div>
+            </div>
+        </div>
+    </ui:define>
+</ui:composition>

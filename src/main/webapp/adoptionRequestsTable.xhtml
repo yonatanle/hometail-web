@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Adoption Requests Table Component
+    
+    This component displays a list of adoption requests for a specific animal.
+    It allows shelter staff to view request details and approve/reject pending requests.
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - f: JSF core tags
+    - ui: Facelets templating
+    - p: PrimeFaces components
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+
+    <!-- Page Title -->
+    <h3 style="text-align:center;">Adoption Requests for Animal</h3>
+
+    <!-- 
+        Growl Notifications (Currently Disabled)
+        - Uncomment to enable global notifications for user actions
+        - Shows success/error messages for approve/reject operations
+    -->
+    <!-- <p:growl id="growl" showDetail="true" life="4000" sticky="false" /> -->
+    <!-- 
+        Adoption Requests DataTable
+        - Displays all adoption requests in a scrollable table
+        - Uses server-side data binding to adoptionRequestsForAnimalBean.requests
+    -->
+    <p:dataTable value="#{adoptionRequestsForAnimalBean.requests}"
+                 var="req"
+                 scrollable="true"
+                 styleClass="ui-datatable"
+                 scrollHeight="300"
+                 style="width:100%; table-layout: auto;"
+                 rowClasses="even,odd">
+        <!-- 
+            Table Columns
+            - Displays requester information and request details
+            - Each column maps to a property of the adoption request DTO
+        -->
+        <p:column>
+            <f:facet name="header">Candidate</f:facet>
+            <h:outputText value="#{req.requesterName}"/>
+        </p:column>
+        <p:column>
+            <f:facet name="header">Phone</f:facet>
+            <h:outputText value="#{req.requesterPhone}"/>
+        </p:column>
+        <p:column style="word-break: break-word;">
+            <f:facet name="header">Email</f:facet>
+            <h:outputText value="#{req.requesterEmail}"/>
+        </p:column>
+        <p:column style="word-break: break-word;">
+            <f:facet name="header">Note</f:facet>
+            <h:outputText value="#{req.note}" styleClass="note-text"/>
+        </p:column>
+        <p:column style="text-align: left;">
+            <f:facet name="header">Status</f:facet>
+            <h:outputText value="#{req.status}"/>
+        </p:column>
+
+        <!-- 
+            Action Buttons Column
+            - Shows Approve/Reject buttons for pending requests
+            - Buttons trigger confirmation dialogs before performing actions
+        -->
+        <p:column headerText="Actions" style="width:24%;">
+            <f:facet name="header">Actions</f:facet>
+
+            <h:panelGroup rendered="#{req.status eq 'PENDING'}">
+                <!-- Reject Button -->
+                <p:commandButton value="Reject" icon="pi pi-times"
+                                 styleClass="ui-button-danger"
+                                 process="@this"
+                                 update=":animalActionsForm:rejectDlg"
+                                 oncomplete="PF('rejectDialog').show()">
+                    <f:setPropertyActionListener target="#{adoptionRequestsForAnimalBean.selectedRequest}"
+                                                 value="#{req}"/>
+                </p:commandButton>
+                <p:spacer width="6"/>
+                <!-- Approve Button -->
+                <p:commandButton value="Approve" icon="pi pi-check"
+                                 styleClass="ui-button-success"
+                                 process="@this"
+                                 update=":animalActionsForm:approveDlg"
+                                 oncomplete="PF('approveDialog').show()">
+                    <f:setPropertyActionListener target="#{adoptionRequestsForAnimalBean.selectedRequest}"
+                                                 value="#{req}"/>
+                </p:commandButton>
+
+
+
+            </h:panelGroup>
+        </p:column>
+    </p:dataTable>
+
+    <!-- 
+        Reject Confirmation Dialog
+        - Appears when staff clicks 'Reject' on a pending request
+        - Requires confirmation before proceeding with rejection
+    -->
+    <p:confirmDialog id="rejectDlg" widgetVar="rejectDialog"
+                     header="Reject Request"
+                     message="Are you sure you want to reject this request?"
+                     appendTo="@(body)" showEffect="fade" hideEffect="fade">
+        <p:commandButton value="Yes" icon="pi pi-check"
+                         action="#{adoptionRequestsForAnimalBean.reject}"
+                         process="@this"
+                         update=":animalActionsForm :growl"
+                         immediate="true"
+                         oncomplete="PF('rejectDialog').hide()"/>
+        <p:commandButton value="No" type="button" icon="pi pi-times"
+                         onclick="PF('rejectDialog').hide()"/>
+    </p:confirmDialog>
+
+    <!-- 
+        Approve Confirmation Dialog
+        - Appears when staff clicks 'Approve' on a pending request
+        - Requires confirmation before approving the adoption
+    -->
+    <p:confirmDialog id="approveDlg" widgetVar="approveDialog"
+                     header="Approve Request"
+                     message="Are you sure you want to approve this request?"
+                     appendTo="@(body)" showEffect="fade" hideEffect="fade">
+        <p:commandButton value="Yes" icon="pi pi-check"
+                         action="#{adoptionRequestsForAnimalBean.approve}"
+                         process="@this"
+                         update=":animalActionsForm :growl"
+                         immediate="true"
+                         oncomplete="PF('approveDialog').hide()"/>
+        <p:commandButton value="No" type="button" icon="pi pi-times"
+                         onclick="PF('approveDialog').hide()"/>
+    </p:confirmDialog>
+</ui:composition>

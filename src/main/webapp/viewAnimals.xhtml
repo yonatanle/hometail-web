@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    View Animals Page - HomeTail Application
+    
+    Displays a searchable and filterable list of animals available for adoption.
+    
+    Features:
+    - Advanced filtering by category, gender, size, and age group
+    - Search functionality across animal details
+    - Sortable results
+    - Paginated display
+    - Responsive design
+    
+    Dependencies:
+    - viewAnimalsBean: Manages animal data and filtering logic
+    - PrimeFaces: For UI components and AJAX
+    - Main template: Provides consistent page layout
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - p: PrimeFaces components
+    - f: JSF core tags
+    - ui: Facelets templating
+-->
+<ui:composition template="/WEB-INF/templates/main.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <!-- 
+        Page Title
+        - Sets the browser tab/window title
+        - Displayed in the browser's title bar or tab
+    -->
+    <ui:define name="title">Animals for Adoption</ui:define>
+
+    <!-- 
+        Main Content Area
+        - Replaces the content section in the main template
+        - Contains the entire animals listing interface
+    -->
+    <ui:define name="content">
+
+        <!-- 
+            Breadcrumb Navigation
+            - Shows the current location in the application
+            - Provides quick navigation to parent pages
+            - Dynamically shows Home or Welcome based on login status
+        -->
+        <p:breadCrumb>
+            <p:menuitem value="Home"
+                        outcome="#{loginBean.loggedIn ? 'home.xhtml' : 'welcome.xhtml'}"
+                        icon="pi pi-home"/>
+            <p:menuitem value="Animals"
+                        outcome="viewAnimals.xhtml"
+                        icon="pi pi-list"/>
+        </p:breadCrumb>
+
+
+        <!-- 
+            Main Form
+            - Wraps all interactive elements
+            - Handles AJAX updates for filtering and sorting
+            - Manages form submission and validation
+        -->
+        <h:form id="animalsForm">
+            <p:messages id="msgs" closable="true"/>
+
+            <div class="container" style="max-width:1200px;margin:0 auto;padding:1rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+                    <h2 style="margin:0;">Animals for Adoption</h2>
+
+                    <!-- Refresh now also updates the summary -->
+                    <p:commandButton value="Refresh"
+                                     icon="pi pi-refresh"
+                                     action="#{viewAnimalsBean.reloadFromBackend}"
+                                     update="@form :animalsForm:filtersSummary"/>
+                </div>
+
+                <!-- 
+                    Filters Section
+                    - Collapsible panel containing all filter controls
+                    - Uses responsive grid layout
+                    - Includes search, dropdowns, and action buttons
+                -->
+                <p:fieldset legend="Search and Filters" toggleable="true" toggleSpeed="150" style="margin-top:1rem;">
+                    <div class="p-fluid p-formgrid p-grid" style="row-gap:1rem;">
+
+                        <!-- 
+                            Search Input
+                            - Live-updates as user types
+                            - Searches across name, breed, and description
+                        -->
+                        <div class="p-field p-col-12 p-md-4">
+                            <p:inputText id="q"
+                                         value="#{viewAnimalsBean.q}"
+                                         placeholder="Search by name, breed, description…">
+                                <p:ajax event="keyup" update="applyBtn"/>
+                            </p:inputText>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="p-field p-col-12 p-md-2">
+                            <p:selectOneMenu id="category" value="#{viewAnimalsBean.categoryId}" style="width:100%;">
+                                <f:selectItem itemLabel="All categories" itemValue="#{null}"/>
+                                <f:selectItems value="#{viewAnimalsBean.categories}" var="c"
+                                               itemLabel="#{c.name}" itemValue="#{c.id}"/>
+                            </p:selectOneMenu>
+                        </div>
+
+                        <!-- Gender -->
+                        <div class="p-field p-col-12 p-md-2">
+                            <p:selectOneMenu id="gender" value="#{viewAnimalsBean.gender}" style="width:100%;">
+                                <f:selectItem itemLabel="Any gender" itemValue=""/>
+                                <f:selectItems value="#{viewAnimalsBean.availableGenders}"/>
+                            </p:selectOneMenu>
+                        </div>
+
+                        <!-- Size -->
+                        <div class="p-field p-col-12 p-md-2">
+                            <p:selectOneMenu id="size" value="#{viewAnimalsBean.size}" style="width:100%;">
+                                <f:selectItem itemLabel="Any size" itemValue=""/>
+                                <f:selectItems value="#{viewAnimalsBean.availableSizes}"/>
+                            </p:selectOneMenu>
+                        </div>
+
+                        <!-- Age Group -->
+                        <div class="p-field p-col-12 p-md-2">
+                            <p:selectOneMenu id="ageGroup" value="#{viewAnimalsBean.ageGroup}" style="width:100%;">
+                                <f:selectItem itemLabel="Any age" itemValue=""/>
+                                <f:selectItems value="#{viewAnimalsBean.availableAgeGroups}"/>
+                            </p:selectOneMenu>
+                        </div>
+
+                        <!-- Only available -->
+                        <div class="p-field-checkbox p-col-12 p-md-2" style="display:flex;align-items:center;">
+                            <p:selectBooleanCheckbox id="onlyAvailable" value="#{viewAnimalsBean.onlyAvailable}"/>
+                            <h:outputLabel for="onlyAvailable" value=" Only available" style="margin-left:.5rem;"/>
+                        </div>
+
+                        <!-- Sorting -->
+                        <div class="p-field p-col-12 p-md-2">
+                            <p:selectOneMenu id="sortBy" value="#{viewAnimalsBean.sortBy}" style="width:100%;">
+                                <f:selectItem itemLabel="Sort by: Name" itemValue="name"/>
+                                <f:selectItem itemLabel="Sort by: Category" itemValue="category"/>
+                                <f:selectItem itemLabel="Sort by: Age" itemValue="age"/>
+                            </p:selectOneMenu>
+                        </div>
+                        <div class="p-field p-col-12 p-md-2">
+                            <p:selectOneMenu id="sortOrder" value="#{viewAnimalsBean.sortOrder}" style="width:100%;">
+                                <f:selectItem itemLabel="Ascending" itemValue="asc"/>
+                                <f:selectItem itemLabel="Descending" itemValue="desc"/>
+                            </p:selectOneMenu>
+                        </div>
+
+                        <!-- 
+                            Action Buttons
+                            - Apply filters: Submits the form and refreshes results
+                            - Clear: Resets all filters to defaults
+                            - Default command: Makes Enter key trigger the Apply action
+                        -->
+                        <div class="p-field p-col-12 p-md-8" style="display:flex;gap:.5rem;justify-content:flex-end;">
+                            <p:commandButton id="applyBtn"
+                                             value="Apply"
+                                             action="#{viewAnimalsBean.applyFilters}"
+                                             ajax="true"
+                                             process="@form"
+                                             update=":animalsForm:results :animalsForm:msgs :animalsForm:filtersSummary"
+                                             onstart="PF('statusDialog').show();"
+                                             oncomplete="PF('statusDialog').hide();"
+                                             onerror="PF('statusDialog').hide();"/>
+
+                            <p:commandButton value="Clear"
+                                             action="#{viewAnimalsBean.clearFilters}"
+                                             ajax="true"
+                                             process="@this"
+                                             update="@form :animalsForm:results :animalsForm:msgs :animalsForm:filtersSummary"/>
+                            <p:defaultCommand target="applyBtn"/>
+                        </div>
+                    </div>
+                </p:fieldset>
+
+                <!-- 
+                    Active Filters Summary
+                    - Shows currently applied filters
+                    - Displays total number of matching animals
+                    - Updates dynamically when filters change
+                -->
+                <h:panelGroup id="filtersSummary" layout="block"
+                              style="margin-top:.75rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+                    <span>Total: <strong>#{viewAnimalsBean.animals.size()}</strong></span>
+                    <span>Category:
+                <strong>#{empty viewAnimalsBean.category ? 'All' : viewAnimalsBean.category}</strong>
+            </span>
+                    <span>Gender:
+                <strong>#{empty viewAnimalsBean.gender ? 'Any' : viewAnimalsBean.gender}</strong>
+            </span>
+                    <span>Size:
+                <strong>#{empty viewAnimalsBean.size ? 'Any' : viewAnimalsBean.size}</strong>
+            </span>
+                    <span>Age:
+                <strong>#{empty viewAnimalsBean.ageGroup ? 'Any' : viewAnimalsBean.ageGroup}</strong>
+            </span>
+                    <span>Availability:
+                <strong>#{viewAnimalsBean.onlyAvailable ? 'Only available' : 'All'}</strong>
+            </span>
+                </h:panelGroup>
+
+                <!-- 
+                    Animals Data Table
+                    - Displays paginated list of animals
+                    - Responsive design with columns for key information
+                    - Includes images and status indicators
+                    - Links to detailed animal view
+                -->
+                <h:panelGroup id="results">
+                    <p:dataTable id="animalsTable"
+                                 value="#{viewAnimalsBean.animals}"
+                                 var="a"
+                                 paginator="true"
+                                 rows="5"
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                 currentPageReportTemplate="Page {currentPage} of {totalPages} • Total records: {totalRecords}"
+                                 rowsPerPageTemplate="5,10,20,50"
+                                 emptyMessage="No animals found.">
+
+                        <p:column headerText="Image" style="width:140px;text-align:center;">
+                            <h:panelGroup>
+                                <h:graphicImage value="#{viewAnimalsBean.resolveImage(a.image)}"
+                                                width="120"
+                                                alt="#{a.name}"/>
+                                <br/>
+                                <p:tag value="#{a.adopted ? 'Adopted' : 'Available'}"
+                                       severity="#{a.adopted ? 'warn' : 'success'}"
+                                       style="margin-top:.5rem;"/>
+                            </h:panelGroup>
+                        </p:column>
+
+                        <p:column headerText="Name">
+                            <h:outputText value="#{a.name}"/>
+                            <br/>
+                            <small>#{a.ageDescription}</small>
+                        </p:column>
+
+                        <p:column headerText="Category/Breed">
+                            <h:outputText value="#{a.categoryName}"/>
+                            <br/>
+                            <small>#{a.breedName}</small>
+                        </p:column>
+
+                        <p:column headerText="Gender/Size">
+                            <h:outputText value="#{a.gender}"/>
+                            <br/>
+                            <small>#{a.size}</small>
+                        </p:column>
+
+                        <p:column headerText="Description" style="min-width:260px;">
+                            <h:outputText value="#{a.shortDescription}"/>
+                            <ui:fragment rendered="#{not empty a.longDescription}">
+                                <br/>
+                                <small style="opacity:.8;">#{a.longDescription}</small>
+                            </ui:fragment>
+                        </p:column>
+
+                        <p:column headerText="Actions" style="width:160px;text-align:center;">
+                            <p:commandButton value="Details"
+                                             icon="pi pi-external-link"
+                                             onclick="window.location.href='animalDetails.xhtml?id=#{a.id}'; return false;"/>
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGroup>
+            </div>
+            <p:defaultCommand target="applyBtn"/>
+        </h:form>
+        <!-- 
+            Loading Dialog
+            - Shown during AJAX operations
+            - Provides visual feedback during data loading
+            - Prevents user interaction while loading
+        -->
+        <p:dialog header="Loading..." widgetVar="statusDialog" modal="true" closable="false" resizable="false" width="300">
+            <div style="text-align: center; padding: 20px;">
+                <i class="pi pi-spin pi-spinner" style="font-size: 2rem; margin-right: 10px;"></i>
+                <span>Please wait while loading animals...</span>
+            </div>
+        </p:dialog>
+
+    </ui:define>
+</ui:composition>

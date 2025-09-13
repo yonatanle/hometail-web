@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Login Page - HomeTail Application
+    
+    Handles user authentication and login functionality.
+    Provides a responsive login form with email/password fields.
+    
+    Features:
+    - Email and password authentication
+    - Form validation
+    - Remember me functionality
+    - Error handling and user feedback
+    - Registration link for new users
+    
+    Dependencies:
+    - loginBean: Manages authentication logic and session
+    - PrimeFaces: For UI components and theming
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - f: JSF core tags
+    - p: PrimeFaces components
+    - ui: Facelets templating
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <!-- 
+        Page Head Section
+        - Contains page title and styles
+        - Defines CSS variables for theming
+        - Sets up responsive layout and form styling
+    -->
+    <h:head>
+    <title>Login • HomeTail</title>
+    <style>
+        html, :root { --bg:#fffef5; --brand:#0d2c63; }
+        body{
+            margin:0; background:var('--bg', #fffef5);
+            font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+            min-height:100vh; display:grid; place-items:center;
+        }
+        .wrap{ width:100%; max-width:920px; padding:24px; }
+        .card{
+            margin:0 auto; max-width:520px; background:#fff;
+            border:1px solid #e6e9f0; border-radius:16px;
+            box-shadow:0 10px 30px rgba(13,44,99,.08);
+            padding:28px 26px 26px;
+        }
+        .title{ margin:0 0 .25rem; color:var('--brand',#0d2c63); font-size:1.6rem; }
+        .subtitle{ color:#2d3a55; margin:0 0 1rem; font-size:1.05rem; }
+
+        /* Aligned label | field grid */
+        .form-grid{
+            display:grid;
+            grid-template-columns: 140px minmax(0,1fr);
+            column-gap:16px; row-gap:12px; align-items:center;
+        }
+        @media (max-width:640px){ .form-grid{ grid-template-columns:1fr; } }
+        .lbl{ color:#2d3a55; font-weight:600; }
+        .lbl.required::after{ content:" *"; color:#d33; }
+        .full{ width:100%; }
+        .actions{ display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; margin-top:14px; }
+        .btn-wide{ width:100%; }
+        .aux{ margin-top:10px; font-size:.92rem; color:#6b7a90; }
+        .error-text{ color:#d33; font-weight:600; margin-top:8px; display:block; }
+    </style>
+</h:head>
+
+    <!-- 
+        Page Body
+        - Main container for the login form
+        - Handles redirection for already logged-in users
+        - Contains the login form and related UI elements
+    -->
+    <h:body>
+    <!-- 
+        View Initialization
+        - Checks if user is already logged in
+        - Redirects to home page if already authenticated
+        - Runs before page rendering
+    -->
+    <f:metadata>
+        <f:viewAction action="#{loginBean.redirectIfAlreadyLoggedIn}"/>
+    </f:metadata>
+
+    <div class="wrap">
+        <div class="card">
+            <h2 class="title">Login</h2>
+            <div class="subtitle">Welcome back to HomeTail</div>
+
+            <!-- 
+                Login Form
+                - Handles user authentication
+                - Includes validation and error handling
+                - Uses AJAX for form submission
+            -->
+            <h:form id="form">
+                <!-- 
+                    Flash Messages
+                    - Displays success messages (e.g., after registration)
+                    - Auto-updates to show new messages
+                    - Non-sticky (disappears after a short time)
+                -->
+                <p:growl id="growl" showDetail="false" showSummary="true" autoUpdate="true" sticky="false" />
+                
+                <ui:fragment rendered="#{not empty facesContext.externalContext.flash.get('successMessage')}">
+                    <f:event type="preRenderView" listener="#{loginBean.showFlashMessage}" />
+                </ui:fragment>
+                
+                <!-- 
+                    Error Messages
+                    - Shows form validation errors
+                    - Displays authentication failures
+                    - Closable by the user
+                -->
+                <p:messages id="msgs" showDetail="false" showSummary="true" closable="true" autoUpdate="true" globalOnly="true" />
+                <p:focus for="email"/>
+
+                <!-- 
+                    Form Fields Grid
+                    - Responsive layout for form fields
+                    - Uses CSS Grid for alignment
+                    - Stacks on mobile devices
+                -->
+                <div class="form-grid">
+                    <p:outputLabel for="email" value="Email" styleClass="lbl required"/>
+                    <p:inputText id="email" value="#{loginBean.email}" type="email"
+                                 required="true" requiredMessage="Email is required."
+                                 autocomplete="email" styleClass="full"/>
+
+                    <p:outputLabel for="password" value="Password" styleClass="lbl required"/>
+                    <p:password id="password" value="#{loginBean.password}"
+                                feedback="false" toggleMask="true"
+                                required="true" requiredMessage="Password is required."
+                                styleClass="full"/>
+                </div>
+
+                <!-- 
+                    Form Submission
+                    - Configures Enter key to submit form
+                    - Matches the login button's action
+                -->
+                <p:defaultCommand target="loginBtn"/>
+
+                <div class="actions">
+                    <p:commandButton id="loginBtn" value="Login" icon="pi pi-sign-in"
+                                     action="#{loginBean.login}"
+                                     update="msgs @form"
+                                     styleClass="p-button-primary p-button-lg btn-wide"/>
+
+                    <p:button value="Back" icon="pi pi-arrow-left"
+                              outcome="/welcome?faces-redirect=true"
+                              styleClass="p-button-text"/>
+                </div>
+
+                <!-- 
+                    Custom Error Display
+                    - Shows server-side validation errors
+                    - Complements the PrimeFaces messages
+                    - Styled distinctly from other messages
+                -->
+                <h:panelGroup rendered="#{not empty loginBean.errorMessage}">
+                    <h:outputText value="#{loginBean.errorMessage}" styleClass="error-text"/>
+                </h:panelGroup>
+
+                <div class="aux">
+                    Don’t have an account?
+                    <p:link outcome="/register?faces-redirect=true" value="Create one"/>
+                </div>
+            </h:form>
+        </div>
+    </div>
+</h:body>
+</html>

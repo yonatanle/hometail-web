@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    myAdoptionRequests.xhtml - Page for viewing and managing adoption requests
+    
+    This page displays a list of adoption requests made by the current user.
+    Users can view the status of their requests and cancel pending ones.
+    
+    Required Managed Beans:
+    - myAdoptionRequestsBean: Manages the list of adoption requests and related actions
+    
+    Page Flow:
+    1. User navigates to "My Requests" from the main menu
+    2. Page loads all adoption requests for the current user
+    3. User can view request details and cancel pending requests
+    4. User can navigate back to home page
+-->
+<ui:composition template="/WEB-INF/templates/main.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+
+    <!-- Page title displayed in browser tab -->
+    <ui:define name="title">My Adoption Requests</ui:define>
+
+    <!-- Breadcrumb navigation -->
+    <ui:define name="breadcrumbs">
+        <p:breadCrumb>
+            <p:menuitem value="Home" outcome="/home.xhtml"/>
+            <p:menuitem value="My Requests" disabled="true"/>
+        </p:breadCrumb>
+    </ui:define>
+
+    <!-- Main content area -->
+    <ui:define name="content">
+        <!-- Page-specific styles -->
+        <style>
+            /* Main container with max width */
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+            
+            /* Page title styling */
+            .page-title {
+                text-align: center;
+                margin-bottom: 20px;
+                color: #003366;
+            }
+            
+            /* Scrollable container for the requests list */
+            .scroll-container {
+                max-height: 600px;
+                overflow-y: auto;
+                padding: 15px;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                background: #ffffff;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+            
+            /* Individual request card */
+            .request-card {
+                display: flex;
+                gap: 16px;
+                border: 1px solid #e0e0e0;
+                padding: 16px;
+                margin-bottom: 16px;
+                border-radius: 8px;
+                background: #ffffff;
+                transition: box-shadow 0.2s ease;
+            }
+            
+            .request-card:hover {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Animal image styling */
+            .animal-img {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 8px;
+                border: 1px solid #e0e0e0;
+            }
+            
+            /* Preserve line breaks in notes */
+            .note-text {
+                white-space: pre-line;
+                color: #555;
+            }
+            
+            /* Action buttons container */
+            .actions-row {
+                display: flex;
+                gap: 12px;
+                justify-content: flex-start;
+                margin-top: 12px;
+                padding-top: 8px;
+                border-top: 1px solid #f0f0f0;
+            }
+            
+            /* Back button container */
+            .back-row {
+                display: flex;
+                justify-content: center;
+                margin-top: 20px;
+            }
+            
+            /* Styled link that looks like a button */
+            .link-button {
+                display: inline-block;
+                padding: 8px 16px;
+                border-radius: 6px;
+                border: 1px solid #d0d0d0;
+                background: #f8f9fa;
+                color: #003366;
+                text-decoration: none;
+                transition: background-color 0.2s;
+            }
+            
+            .link-button:hover {
+                background: #e9ecef;
+                text-decoration: none;
+            }
+            
+            /* Status badge styling */
+            .status-badge {
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+                text-transform: capitalize;
+            }
+            
+            .status-PENDING {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+            
+            .status-APPROVED {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            
+            .status-REJECTED {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+        </style>
+
+        <!-- Page header -->
+        <h2 class="page-title">My Adoption Requests</h2>
+
+        <!-- Main form containing the requests list -->
+        <h:form id="requestsForm">
+            <!-- Scrollable container for the requests -->
+            <div class="scroll-container">
+                <!-- Display message if no requests exist -->
+                <h:panelGroup rendered="#{empty myAdoptionRequestsBean.requests}">
+                    <p style="text-align: center; color: #6c757d;">
+                        You haven't made any adoption requests yet.
+                    </p>
+                </h:panelGroup>
+                
+                <!-- Loop through each adoption request -->
+                <ui:repeat value="#{myAdoptionRequestsBean.requests}" var="req">
+                    <h:panelGroup layout="block" styleClass="request-card">
+                        <!-- Animal image with fallback to default image -->
+                        <h:panelGroup layout="block" styleClass="animal-img-container">
+                            <h:graphicImage 
+                                value="#{req.animal.image.startsWith('/uploads/') 
+                                    ? 'http://localhost:9090'.concat(req.animal.image) 
+                                    : req.animal.image}"
+                                alt="#{req.animal.name}"
+                                styleClass="animal-img"
+                                title="#{req.animal.name}" />
+                            <h:graphicImage value="/resources/images/default-animal.jpg"
+                                         alt="#{req.animal.name}"
+                                         styleClass="animal-img default-img"
+                                         rendered="#{empty req.animal.image}" />
+                        </h:panelGroup>
+
+                        <!-- Request details -->
+                        <div style="flex:1 1 auto">
+                            <p>
+                                <!-- Animal information -->
+                                <strong>Animal:</strong> 
+                                <h:outputText value="#{req.animal.category}"/>
+                                <br/>
+                                
+                                <strong>Name:</strong> 
+                                <h:outputText value="#{req.animal.name}"/>
+                                <br/>
+
+                                <!-- Owner information -->
+                                <strong>Owner Information:</strong><br/>
+                                <h:outputText value="Name: #{req.ownerName}" rendered="#{not empty req.ownerName}"/>
+                                <h:outputText value="Name: Not provided" rendered="#{empty req.ownerName}" style="color: #6c757d; font-style: italic;"/>
+                                <br/>
+                                
+                                <h:outputText value="Email: #{req.animal.ownerEmail}" rendered="#{not empty req.animal.ownerEmail}"/>
+                                <h:outputText value="Email: Not provided" rendered="#{empty req.animal.ownerEmail}" style="color: #6c757d; font-style: italic;"/>
+                                <br/>
+                                
+                                <h:outputText value="Phone: #{req.animal.ownerPhone}" rendered="#{not empty req.animal.ownerPhone}"/>
+                                <h:outputText value="Phone: Not provided" rendered="#{empty req.animal.ownerPhone}" style="color: #6c757d; font-style: italic;"/>
+                                <br/>
+
+                                <!-- Request status with colored badge -->
+                                <strong>Status:</strong>
+                                <span class="status-badge status-#{req.status}">
+                                    <h:outputText value="#{req.status}"/>
+                                </span>
+                                <br/>
+                                
+                                <!-- Request note -->
+                                <strong>Note:</strong>
+                                <h:outputText value="#{empty req.note ? 'No note provided' : req.note}" 
+                                           styleClass="note-text"
+                                           style="display: inline-block; margin-top: 4px;"/>
+                            </p>
+
+                            <!-- Action buttons -->
+                            <div class="actions-row">
+                                <!-- For pending requests, show both Edit Note and Cancel buttons -->
+                                <h:panelGroup rendered="#{req.status eq 'PENDING'}">
+                                    <!-- Edit Note button - links to animalDetails.xhtml -->
+                                    <h:button value="Edit Note"
+                                           styleClass="ui-button ui-button-info"
+                                           style="margin-right: 8px;"
+                                           outcome="/animalDetails.xhtml">
+                                        <f:param name="id" value="#{req.animalId}" />
+                                        <i class="pi pi-pencil" style="margin-right: 4px;"></i>
+                                    </h:button>
+                                    
+                                    <!-- Cancel Request button with confirmation -->
+                                    <p:commandButton value="Cancel Request"
+                                                   icon="pi pi-times"
+                                                   styleClass="ui-button-danger"
+                                                   action="#{myAdoptionRequestsBean.deleteRequest(req.id)}"
+                                                   update=":growl requestsForm">
+                                        <p:confirm header="Confirm Cancellation" 
+                                                  message="Are you sure you want to cancel this adoption request?"
+                                                  icon="pi pi-exclamation-triangle" />
+                                    </p:commandButton>
+                                </h:panelGroup>
+                                
+                                <!-- For approved requests, show only Cancel button -->
+                                <h:panelGroup rendered="#{req.status eq 'APPROVED'}">
+                                    <p:commandButton value="Cancel Request"
+                                                   icon="pi pi-times"
+                                                   styleClass="ui-button-danger"
+                                                   action="#{myAdoptionRequestsBean.deleteRequest(req.id)}"
+                                                   update=":growl requestsForm">
+                                        <p:confirm header="Confirm Cancellation" 
+                                                  message="Are you sure you want to cancel this adoption request?"
+                                                  icon="pi pi-exclamation-triangle" />
+                                    </p:commandButton>
+                                </h:panelGroup>
+                            </div>
+                        </div>
+                    </h:panelGroup>
+                </ui:repeat>
+            </div>
+
+            <!-- Back to home link -->
+            <div class="back-row">
+                <h:link outcome="/home.xhtml" styleClass="link-button ui-button ui-widget">
+                    ← Back to Home
+                </h:link>
+            </div>
+
+            <!-- Global confirmation dialog for delete actions -->
+            <p:confirmDialog global="true" 
+                           showEffect="fade" 
+                           hideEffect="fade"
+                           closable="true"
+                           responsive="true"
+                           width="400px">
+                <p:commandButton value="Yes" 
+                               type="button"
+                               styleClass="ui-confirmdialog-yes" 
+                               icon="pi pi-check" />
+                <p:commandButton value="No" 
+                               type="button"
+                               styleClass="ui-confirmdialog-no" 
+                               icon="pi pi-times" />
+            </p:confirmDialog>
+            
+            <!-- Growl for displaying messages -->
+            <p:growl id="growl" showDetail="true" life="5000" />
+        </h:form>
+    </ui:define>
+</ui:composition>

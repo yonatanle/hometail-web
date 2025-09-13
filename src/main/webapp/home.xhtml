@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Home/Dashboard Page - HomeTail Application
+    
+    Main dashboard page that serves as the landing page after user login.
+    Displays role-based navigation options and user information.
+    
+    Features:
+    - Shows welcome message with user's full name
+    - Displays user role (Admin/User)
+    - Provides navigation to key application features
+    - Shows admin-specific options for admin users
+    
+    Dependencies:
+    - loginBean: Handles authentication and user session
+    - PrimeFaces: For UI components
+    
+    Namespaces:
+    - h: JSF HTML tags
+    - f: JSF core tags
+    - p: PrimeFaces components
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+    <!-- 
+        Page Head Section
+        - Contains page title and styles
+        - Defines CSS variables for theming
+        - Sets up responsive layout
+    -->
+    <h:head>
+    <title>HomeTail - Dashboard</title>
+    <style>
+        :root {
+            --brand-color: #0d2c63;
+            --background-color: #fffef5;
+        }
+        body {
+            background-color: var('--background-color');
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+        }
+        .container {
+            max-width: 720px;
+            margin: 8vh auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e6e9f0;
+            border-radius: 14px;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 6px 24px rgba(13,44,99,.06);
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 .25rem;
+            font-size: 2.2rem;
+            color: var('--brand-color');
+            letter-spacing:.3px;
+        }
+        .subtitle {
+            margin: 0 0 1.25rem;
+            font-size: 1.35rem;
+            color: var('--brand-color');
+            opacity: .95;
+        }
+        .role {
+            margin-bottom: 1.25rem;
+        }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+            align-items: center;
+            margin-top: .5rem;
+        }
+        .btn-wide {
+            width: 320px;
+        }
+        .footer-actions {
+            margin-top: 1rem;
+        }
+    </style>
+</h:head>
+
+<h:body>
+    <!-- 
+        Authentication Check
+        - Verifies user is logged in
+        - Redirects to login page if not authenticated
+        - Uses preRenderView event for early validation
+    -->
+    <f:metadata>
+        <f:event type="preRenderView" listener="#{loginBean.redirectIfNotLoggedIn}" />
+    </f:metadata>
+
+    <!-- 
+        Main Container
+        - Centers the content on the page
+        - Applies responsive padding and max-width
+    -->
+    <div class="container">
+        <div class="card">
+            <h1>HomeTail</h1>
+            <div class="subtitle">
+                Welcome, #{empty loginBean.fullName ? 'User' : loginBean.fullName}
+            </div>
+
+            <!-- 
+                User Role Indicator
+                - Displays user's role (Admin/User)
+                - Uses different colors based on role
+                - Controlled by loginBean.admin property
+            -->
+            <div class="role">
+                <p:tag value="Admin" severity="success" rendered="#{loginBean.admin}"/>
+                <p:tag value="User"  severity="info"    rendered="#{not loginBean.admin}"/>
+            </div>
+
+            <!-- 
+                Main Navigation Buttons
+                - Primary actions for the application
+                - Uses GET navigation for better UX
+                - Buttons are styled consistently
+                - Includes role-based visibility
+            -->
+            <div class="actions">
+                <p:button outcome="/submitAnimal?faces-redirect=true"
+                          value="Submit an Animal for Adoption"
+                          icon="pi pi-upload"
+                          styleClass="p-button-outlined p-button-rounded p-button-lg btn-wide"/>
+
+                <p:button outcome="/viewAnimals?faces-redirect=true"
+                          value="View Animals for Adoption"
+                          icon="pi pi-list"
+                          styleClass="p-button-outlined p-button-rounded p-button-lg btn-wide"/>
+
+                <p:button outcome="/myAdoptionRequests?faces-redirect=true"
+                          value="My Adoption Requests"
+                          icon="pi pi-inbox"
+                          styleClass="p-button-outlined p-button-rounded p-button-lg btn-wide"/>
+
+                <p:button outcome="/myAnimals?faces-redirect=true"
+                          value="Animals I Submitted"
+                          icon="pi pi-user"
+                          styleClass="p-button-outlined p-button-rounded p-button-lg btn-wide"/>
+
+                <!-- 
+                    Admin-Only Section
+                    - Only visible to admin users
+                    - Provides access to admin dashboard
+                    - Styled distinctly as a primary action
+                -->
+                <p:button outcome="/admin/index?faces-redirect=true"
+                          value="Admin Dashboard"
+                          icon="pi pi-shield"
+                          rendered="#{loginBean.admin}"
+                          styleClass="p-button-raised p-button-primary p-button-rounded p-button-lg btn-wide"/>
+            </div>
+
+            <!-- 
+                Logout Section
+                - Uses POST request for security
+                - Includes a growl notification area
+                - Styled as a subtle text button
+            -->
+            <div class="footer-actions">
+                <h:form>
+                    <!-- 
+                        Growl Notification Area
+                        - Displays messages to the user
+                        - Automatically disappears after a short time
+                    -->
+                    <p:growl id="messages" life="3000"/>
+                    <!-- 
+                        Logout Button
+                        - Initiates logout process
+                        - Uses POST request for security
+                    -->
+                    <p:commandButton value="Logout" icon="pi pi-sign-out"
+                                     styleClass="p-button-text"
+                                     action="#{loginBean.logout}"
+                                     process="@this"/>
+                </h:form>
+            </div>
+        </div>
+    </div>
+</h:body>
+</html>

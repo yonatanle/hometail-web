@@ -37,15 +37,6 @@ This will compile the project and create a WAR file in the `target` directory.
    ```
 3. The application will be available at: `http://localhost:8080/homeTail-web-1.0-SNAPSHOT/`
 
-#### For WildFly:
-
-1. Download and install [WildFly](https://www.wildfly.org/downloads/)
-2. Deploy the WAR file:
-   ```bash
-   cp target/homeTail-web-1.0-SNAPSHOT.war $WILDFLY_HOME/standalone/deployments/
-   ```
-3. The application will be available at: `http://localhost:8080/homeTail-web-1.0-SNAPSHOT/`
-
 ## Development Setup
 
 ### Required Tools

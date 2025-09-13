@@ -33,11 +33,14 @@ This will compile the project and create a WAR file in the `target` directory.
 1. Download and install [Payara Server](https://www.payara.fish/software/payara-platform-community-edition/)
 2. Deploy the WAR file:
    ```bash
-   # "$HOME"/payara6/glassfish/bin/asadmin deploy target/homeTail-web.war
+   "$HOME"/payara6/glassfish/bin/asadmin deploy target/homeTail-web.war
+   ```
+3. Start the server:
+   ```bash
    "$HOME"/payara6/glassfish/bin/asadmin start-domain --domaindir "$HOME"/payara6/glassfish/domains domain1
    ```
-3. The application will be available at: `http://localhost:8080/homeTail-web/welcome.xhtml`
-4. Stop the server: 
+4. The application will be available at: `http://localhost:8080/homeTail-web/welcome.xhtml`
+5. Stop the server: 
    ```bash
    "$HOME"/payara6/glassfish/bin/asadmin stop-domain domain1
    ```

@@ -57,14 +57,14 @@ This will compile the project and create a WAR file in the `target` directory.
 ```
 src/
 ├── main/
-│   ├── java/              # Java source files
-│   │   └── com/hometail/  # Main package
-│   └── webapp/            # Web application files
-│       ├── resources/     # Static resources (CSS, JS, images)
-│       └── WEB-INF/       # Configuration files
-│           ├── faces-config.xml
-│           └── web.xml
-└── test/                  # Test files
+   ├── java/              # Java source files
+   │   └── com/hometail/  # Main package
+   └── webapp/            # Web application files
+       ├── resources/     # Static resources (CSS, JS, images)
+       └── WEB-INF/       # Configuration files
+           ├── faces-config.xml
+           └── web.xml
+
 ```
 
 ## Dependencies

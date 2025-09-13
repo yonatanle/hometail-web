@@ -14,7 +14,7 @@ HomeTail is a web application for managing animal adoptions, built with JavaServ
 ### 1. Clone the Repository
 
 ```bash
-git clone [repository-url].git
+git clone https://github.com/yonatanle/hometail-web.git
 cd homeTail-web
 ```
 
